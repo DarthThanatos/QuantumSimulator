@@ -4,8 +4,15 @@ from view.LoadingScreen import LoadingScreen
 from view.Inspector import Inspector
 from view.UpperMenu import UpperMenu
 from view.Editor import Editor
+import re
 
 from win32api import GetSystemMetrics
+import os
+
+cwd = os.getcwd()
+path_parts = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+if path_parts[3] != "view":
+    os.chdir("view")
 
 
 class SimulatorApp(wx.App):
