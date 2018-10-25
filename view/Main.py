@@ -9,9 +9,9 @@ import re
 from win32api import GetSystemMetrics
 import os
 
-# when working in intellij, we already are in the "view" directory.
+# When working in intellij, we already are in the "view" directory.
 # If one wishes to run this code from a console, the root dir is "Simulator", thus all relative images paths break.
-# the code below adjusts the working directory, so there is no need to change images paths throughout the project
+# The code below adjusts the working directory, so there is no need to change images paths throughout the project
 # in case we want to execute the code from a different booting tool(whether from ide or console).
 
 cwd = os.getcwd()
