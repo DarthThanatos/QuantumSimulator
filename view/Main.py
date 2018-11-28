@@ -24,11 +24,20 @@ class SimulatorApp(wx.App):
     def __init__(self):
         wx.App.__init__(self)
 
+
+    def OnKeyUP(self, event):
+        keyCode = event.GetKeyCode()
+        if keyCode == wx.WXK_ESCAPE:
+            print("key up",event.GetEventObject())
+            self.frame.SetCursor(wx.NullCursor)
+        event.Skip()
+
     def OnInit(self):
         wx.ToolTip.Enable(True)
 
         frame = wx.MDIParentFrame(None, title="Hello Simulator", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
         frame.Maximize(True)
+        frame.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)
         self.frame = frame
 
 

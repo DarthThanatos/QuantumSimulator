@@ -2,6 +2,8 @@ import threading
 
 
 from util.Utils import *
+from view.Circuit import Circuit
+from view.Notepad import Notepad
 
 [wxID_EDITORFRAME, wxID_EDITORFRAMESTATUSBAR, wxID_EDITORFRAMETABS,
  wxID_EDITORFRAMETABSSPLITTER, wxID_EDITORFRAMETOOLBAR,
@@ -218,8 +220,8 @@ class Editor(wx.MDIChildFrame):
         self.numFixedPages = 0
 
         # Explorer
-        self.explorer, self.explorerPageIdx = self.addExplorerPage('Explorer')
-        self.explorer, self.explorerPageIdx = self.addExplorerPage('Circuit')
+        self.explorerPageIdx = self.addExplorerPage('Explorer')
+        self.explorerPageIdx = self.addExplorerPage('Circuit', Circuit)
 
         self.winDimsMenu = wx.Menu()
         self.winDimsMenu.Append(wxID_EDITORWINDIMSLOAD, 'Load',
@@ -236,13 +238,7 @@ class Editor(wx.MDIChildFrame):
               'Inspector', keyDefs['Inspector'], self.inspBmp,
               'Switch to the Inspector frame.')
         self.winMenu.AppendSeparator()
-        if self.explorer:
-            appendMenuItem(self.winMenu, wxID_EDITORSWITCHEXPLORER,
-                  'Explorer', keyDefs['GotoExplorer'], self.explBmp,
-                  'Switch to the Explorer page')
-            appendMenuItem(self.winMenu, wxID_EDITORSWITCHPREFS,
-                  'Preferences', (), self.prefsBmp,
-                  'Switch to the Preferences in the Explorer')
+
         appendMenuItem(self.winMenu, wxID_EDITORBROWSEBACK,
               'Browse back', (), self.backBmp, #\t%s'%keyDefs['BrowseBack'][2],
               'Go back in browsing history stack')
@@ -315,19 +311,12 @@ class Editor(wx.MDIChildFrame):
     def OnPythonHelpToolClick(self, ev):
         pass
 
-    def addExplorerPage(self, name):
-        explorerPage = ExplorerPage(self.tabs, self.modelImageList, self)
+    def addExplorerPage(self, name, Page=Notepad):
+        explorerPage = Page(self.tabs, self)
         self.tabs.AddPage(explorerPage, name, imageId=wx.NewId())
         self.numFixedPages += 1
-        return None, self.tabs.GetPageCount()-1
+        return self.tabs.GetPageCount()-1
 
-
-class ExplorerPage(wx.Panel):
-    def __init__(self, parent, modimages, editor):
-        wx.Panel.__init__(self, parent, wx.NewId(),
-              style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
-        self.editor = editor
-        self.modimages = modimages
 
 
 

@@ -140,7 +140,7 @@ class PanelPalettePage(wx.Panel):
         parent.AddPage(self, name)
         self.posX = int(round(self.buttonSep/2.0))
         self.posY = int(round((self.GetSize().y -(75+self.buttonBorder) + 4)/2.0))
-        self.menu =wx.Menu()
+        self.menu = wx.Menu()
 
 
     def addButton(self, widgetName, wxClass, constrClass, clickEvt, hintFunc,
@@ -188,9 +188,12 @@ class NewPalettePage(PanelPalettePage):
               clickEvt, hintFunc, hintLeaveFunc, btnType)
         return mID
 
+    def gate_btn_fun(self, event):
+        self.GetParent().GetParent().GetParent().SetCursor(wx.Cursor(wx.Image( '../Images/Palette/X.png')))
+
     def addButton2(self, name, Controller, btnType):
         mID = PanelPalettePage.addButton(self, name, Controller, None,
-              self.OnClickTrap, None, None, btnType)
+                                         self.gate_btn_fun, None, None, btnType)
 
         return mID
 
