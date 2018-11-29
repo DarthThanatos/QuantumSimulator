@@ -113,7 +113,7 @@ class LoadingScreen(wx.Frame):
         self.cnt = 0
         self.cntTotal = 100
         Thread(target=self.monitorModuleCount).start()
-        EVT_MOD_CNT_UPD(self, self.OnUpdateProgress)
+        self.Bind(EVT_MOD_CNT_UPD, self.OnUpdateProgress)
 
     def monitorModuleCount(self):
         self._live = True

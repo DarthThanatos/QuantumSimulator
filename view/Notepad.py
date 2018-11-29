@@ -6,7 +6,15 @@ import keyword
 class Notepad(wx.Panel):
     def __init__(self, parent, editor):
         wx.Panel.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
-        self.textArea = stc.StyledTextCtrl(self, size = parent.GetClientSize(), style=wx.TE_MULTILINE)
+        self.editor = editor
+        notepadSizer = wx.BoxSizer(wx.HORIZONTAL)
+        notepadSizer.Add(self.newTextArea(parent), 4, wx.EXPAND)
+        notepadSizer.Add(self.newFileTree(), 1, wx.EXPAND)
+        self.SetSizer(notepadSizer)
+        self.SetAutoLayout(True)
+
+    def newTextArea(self, parent):
+        self.textArea = stc.StyledTextCtrl(self, style=wx.TE_MULTILINE)
         self.textArea.SetLexer(stc.STC_LEX_PYTHON)
         self.textArea.SetStyleBits(5)
         self.textArea.SetMarginWidth(0, 10)
@@ -50,7 +58,14 @@ class Notepad(wx.Panel):
         self.textArea.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
 
         self.textArea.SetCaretForeground("BLUE")
-        self.editor = editor
+        return self.textArea
 
-    def handleStyleNeeded(self):
-        print("style needed and i do not know ")
+    def newFileTree(self):
+        fileTreeSizer = wx.FlexGridSizer(cols=1, hgap=5, vgap=5)
+        fileTreeSizer.Add(wx.StaticText(self, -1, "wx.DIRCTRL_SHOW_FILTERS"),)
+        fileTreeSizer.Add(wx.GenericDirCtrl(self, -1,  style=wx.DIRCTRL_SHOW_FILTERS,
+                                filter="All files (*.*)|*.*|Python files (*.py)|*.py"), 0, wx.EXPAND)
+
+        fileTreeSizer.AddGrowableCol(0)
+        fileTreeSizer.AddGrowableRow(1)
+        return fileTreeSizer

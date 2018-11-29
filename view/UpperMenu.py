@@ -51,24 +51,21 @@ class UpperMenu(wx.MDIChildFrame):
         screenX, screenY, screenWidth, screenHeight = wx.GetClientDisplayRect()
         windowManagerSide = 5
         paletteHeight = 120
-        self.SetDimensions(screenX, screenY,
+        self.SetSize(screenX, screenY,
             screenWidth - windowManagerSide * 2 + 11,
             paletteHeight)
 
     def initUpperMenu(self, inspector, editor):
         self.inspector = inspector
         self.editor = editor
-        palettePage = NewPalettePage(self.palette, "New",
+        palettePage = PanelPalettePage(self.palette, "New",
               '../Images/Palette/', self)
         paletteLists = {'New': ["X", "Y", "Z", "T", "H"]}
 
         for modelName in paletteLists['New']:
-            palettePage.addButton2(modelName,
-                ButtonConstrClass(),
-                wx.lib.buttons.GenBitmapButton)
+            palettePage.addGateButton(modelName, wx.lib.buttons.GenBitmapButton)
 
         self.palettePages.append(palettePage)
-
 
     def addTool(self, filename, text, help, func, toggle = False):
         mID = wx.NewId()
@@ -143,14 +140,13 @@ class PanelPalettePage(wx.Panel):
         self.menu = wx.Menu()
 
 
-    def addButton(self, widgetName, wxClass, constrClass, clickEvt, hintFunc,
-                  hintLeaveFunc, btnType):
+    def addButton(self, btnName, clickEvt, btnType):
         mID = wx.NewId()
-        self.menu.Append(mID, widgetName, '', False)
+        self.menu.Append(mID, btnName, '', False)
         self.palette.Bind(wx.EVT_MENU, clickEvt, id=mID)
 
 
-        bmp = self.getButtonBmp(widgetName, wxClass)
+        bmp = self.getButtonBmp(btnName)
         width = bmp.GetWidth() + self.buttonBorder
         height = bmp.GetHeight() + self.buttonBorder
 
@@ -161,7 +157,7 @@ class PanelPalettePage(wx.Panel):
 
         newButton.SetBezelWidth(1)
         newButton.SetUseFocusIndicator(0)
-        newButton.SetToolTipString(widgetName)
+        newButton.SetToolTip(btnName)
         try:
             newButton.SetBitmapLabel(bmp, False)
         except TypeError:
@@ -169,55 +165,20 @@ class PanelPalettePage(wx.Panel):
 
         self.Bind(wx.EVT_BUTTON, clickEvt, id=mID)
 
-        self.buttons[widgetName] = newButton
+        self.buttons[btnName] = newButton
         self.posX = self.posX + bmp.GetWidth() + 11
 
         return mID
 
-    def getButtonBmp(self, name, wxClass):
-        return wx.Image('../Images/Palette/Component.png').ConvertToBitmap()
-
-class NewPalettePage(PanelPalettePage):
-    def __init__(self, parent, name, bitmapPath, palette):
-        PanelPalettePage.__init__(self, parent, name, bitmapPath,  palette)
-
-
-    def addButton(self, widgetName, wxClass, constrClass, clickEvt, hintFunc,
-                  hintLeaveFunc, btnType):
-        mID = PanelPalettePage.addButton(self, widgetName, wxClass, constrClass,
-              clickEvt, hintFunc, hintLeaveFunc, btnType)
-        return mID
-
-    def gate_btn_fun(self, event):
-        self.GetParent().GetParent().GetParent().SetCursor(wx.Cursor(wx.Image( '../Images/Palette/X.png')))
-
-    def addButton2(self, name, Controller, btnType):
-        mID = PanelPalettePage.addButton(self, name, Controller, None,
-                                         self.gate_btn_fun, None, None, btnType)
+    def addGateButton(self, name, btnType):
+        def gate_btn_fun(event):
+            self.GetParent().GetParent().GetParent().SetCursor(wx.Cursor(wx.Image('../Images/Palette/{}.png'.format(name))))
+        mID = PanelPalettePage.addButton(self, name, gate_btn_fun, btnType)
 
         return mID
 
-    def getButtonBmp(self, name, wxClass):
+    def getButtonBmp(self, name):
         try:
             return wx.Image('%s%s.png' %(self.bitmapPath, name)).ConvertToBitmap()
         except:
             return wx.Image('../Images/Palette/Component.png').ConvertToBitmap()
-
-    def OnClickTrap(self, event):
-        pass
-
-class ButtonConstrClass:
-    pass
-
-class PalettePage(PanelPalettePage):
-    def __init__(self, parent, name, bitmapPath, palette):
-        PanelPalettePage.__init__(self, parent, name, bitmapPath, palette)
-
-    def addToggleBitmaps(self, classes, hintFunc, hintLeaveFunc):
-        for wxClass in classes:
-            self.addButton("empty", wxClass, ButtonConstrClass(), self.OnClickTrap, hintFunc,
-                  hintLeaveFunc, wx.lib.buttons.GenBitmapToggleButton)
-
-    def OnClickTrap(self, event):
-        pass
-

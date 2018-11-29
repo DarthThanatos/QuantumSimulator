@@ -27,4 +27,4 @@ def appendMenuItem(menu, wId, label, code=(), bmp='', help=''):
     menuItem = wx.MenuItem(menu, wId, text, help)
     if bmp and bmp != '-':
         menuItem.SetBitmap(wx.Image(bmp).ConvertToBitmap())
-    menu.AppendItem(menuItem)
+    menu.Append(menuItem)

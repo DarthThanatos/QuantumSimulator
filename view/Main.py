@@ -21,23 +21,21 @@ if path_parts[3] != "view":
 
 class SimulatorApp(wx.App):
 
-    def __init__(self):
-        wx.App.__init__(self)
-
-
     def OnKeyUP(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
-            print("key up",event.GetEventObject())
             self.frame.SetCursor(wx.NullCursor)
         event.Skip()
 
+    def OnRMClicked(self, ev):
+        self.frame.SetCursor(wx.NullCursor)
+
     def OnInit(self):
         wx.ToolTip.Enable(True)
-
         frame = wx.MDIParentFrame(None, title="Hello Simulator", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
         frame.Maximize(True)
-        frame.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnRMClicked)
         self.frame = frame
 
 
