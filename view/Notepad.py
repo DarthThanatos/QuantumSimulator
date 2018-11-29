@@ -44,14 +44,19 @@ class Notepad(wx.SplitterWindow):
     def __init__(self, parent, editor):
         wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.editor = editor
-
+        self.openCards = {}
         self.SetMinimumPaneSize(1)
-        self.SplitVertically(self.newTextArea(parent), self.newFileTree())
+        self.SplitVertically(self.newNotebook(self), self.newFileTree())
         self.SetSashPosition(1000)
 
-    def newTextArea(self, parent):
-        self.textArea = stc.StyledTextCtrl(self, style=wx.TE_MULTILINE)
-        with open("../workspace/hadamard.py", "r") as f:
+    def newNotebook(self, parent):
+        self.notebook = wx.Notebook(parent, style=wx.CLIP_CHILDREN)
+        self.notebook.AddPage(self.newTextArea(self, "hadamard.py"), "name")
+        return self.notebook
+
+    def newTextArea(self,parent,  title):
+        self.textArea = stc.StyledTextCtrl(parent, style=wx.TE_MULTILINE)
+        with open("../workspace/{}".format(title), "r") as f:
             self.textArea.SetValue(f.read())
         self.textArea.SetLexer(stc.STC_LEX_PYTHON)
         self.textArea.SetStyleBits(5)
@@ -107,8 +112,6 @@ class Notepad(wx.SplitterWindow):
         fileTreeSizer.AddGrowableRow(1)
         panel.SetSizer(fileTreeSizer)
         return panel
-
-
 
     def newDirTree(self, parent):
         cwd =  os.getcwd()
