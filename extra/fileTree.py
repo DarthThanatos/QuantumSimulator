@@ -1,3 +1,6 @@
+import os
+
+import re
 import  wx
 
 #----------------------------------------------------------------------
@@ -38,6 +41,40 @@ class TestPanel(wx.Panel):
 
         self.SetSizer(sz)
         self.SetAutoLayout(True)
+
+    def get_item_by_label(self, tree, search_text, root_item):
+        item, cookie = tree.GetFirstChild(root_item)
+        while item.IsOk():
+            text = tree.GetItemText(item)
+            if text.lower() == search_text.lower():
+                return item
+            if tree.ItemHasChildren(item):
+                match = self.get_item_by_label(tree, search_text, item)
+                if match.IsOk():
+                    return match
+            item, cookie = tree.GetNextChild(root_item, cookie)
+
+        return wx.TreeItemId()
+
+    def newgdc(self, parent):
+        dirTree = wx.GenericDirCtrl(parent, -1, style=wx.DIRCTRL_SHOW_FILTERS | wx.DIRCTRL_SELECT_FIRST,
+                          filter="All files (*.*)|*.*|Python files (*.py)|*.py")
+
+        cwd =  os.getcwd()
+        C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+        workspacePath = C_root + subdir + "workspace"
+        # dirTree.ExpandPath(workspacePath)
+
+        dirTree.SetDefaultPath(workspacePath)
+        dirTree.SetPath(workspacePath)
+
+        tree = dirTree.GetTreeCtrl()
+        res = self.get_item_by_label(tree, "workspace", tree.GetRootItem())
+        print(res.IsOk())
+
+        dirTree.GetChildren()[1].SetSize(-1, 30)
+        # print(dirTree.GetChildren()[0])
+        return dirTree
 
 class Frame(wx.Frame):
     def __init__(self):

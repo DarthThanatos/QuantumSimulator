@@ -1,20 +1,58 @@
-import wx
+import re
 import wx.stc as stc
 
 import keyword
+import wx, os
 
-class Notepad(wx.Panel):
+
+class MyTree(wx.TreeCtrl):
+    def __init__(self, parent, rootPath, textArea):
+        super(MyTree, self).__init__(parent)
+        self.__collapsing = True
+        self.textArea = textArea
+
+        il = wx.ImageList(16, 16)
+        self.folderidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, (16, 16)))
+        self.fileidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, (16, 16)))
+        self.AssignImageList(il)
+
+        ids = {rootPath: self.AddRoot(rootPath, self.folderidx)}
+        self.SetItemHasChildren(ids[rootPath])
+
+        for (dirpath, dirnames, filenames) in os.walk(rootPath):
+            for dirname in sorted(dirnames):
+                fullpath = os.path.join(dirpath, dirname)
+                ids[fullpath] = self.AppendItem(ids[dirpath], dirname, self.folderidx)
+
+            for filename in sorted(filenames):
+                self.AppendItem(ids[dirpath], filename, self.fileidx)
+
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.onFileSelected)
+
+    def onFileSelected(self, event):
+        parent = self.GetItemParent(event.GetItem())
+        parts = [self.GetItemText(event.GetItem())]
+        while parent.GetID() is not None:
+            parts.insert(0, self.GetItemText(parent))
+            parent = self.GetItemParent(parent)
+        fileToOpen = "\\".join(parts)
+        with open(fileToOpen, "r") as f:
+            self.textArea.SetValue(f.read())
+
+
+class Notepad(wx.SplitterWindow):
     def __init__(self, parent, editor):
-        wx.Panel.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
+        wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.editor = editor
-        notepadSizer = wx.BoxSizer(wx.HORIZONTAL)
-        notepadSizer.Add(self.newTextArea(parent), 4, wx.EXPAND)
-        notepadSizer.Add(self.newFileTree(), 1, wx.EXPAND)
-        self.SetSizer(notepadSizer)
-        self.SetAutoLayout(True)
+
+        self.SetMinimumPaneSize(1)
+        self.SplitVertically(self.newTextArea(parent), self.newFileTree())
+        self.SetSashPosition(1000)
 
     def newTextArea(self, parent):
         self.textArea = stc.StyledTextCtrl(self, style=wx.TE_MULTILINE)
+        with open("../workspace/hadamard.py", "r") as f:
+            self.textArea.SetValue(f.read())
         self.textArea.SetLexer(stc.STC_LEX_PYTHON)
         self.textArea.SetStyleBits(5)
         self.textArea.SetMarginWidth(0, 10)
@@ -61,11 +99,21 @@ class Notepad(wx.Panel):
         return self.textArea
 
     def newFileTree(self):
+        panel = wx.Panel(self)
         fileTreeSizer = wx.FlexGridSizer(cols=1, hgap=5, vgap=5)
-        fileTreeSizer.Add(wx.StaticText(self, -1, "wx.DIRCTRL_SHOW_FILTERS"),)
-        fileTreeSizer.Add(wx.GenericDirCtrl(self, -1,  style=wx.DIRCTRL_SHOW_FILTERS,
-                                filter="All files (*.*)|*.*|Python files (*.py)|*.py"), 0, wx.EXPAND)
-
+        fileTreeSizer.Add(wx.StaticText(panel, -1, "WORKSPACE"))
+        fileTreeSizer.Add(self.newDirTree(panel), 0, wx.EXPAND)
         fileTreeSizer.AddGrowableCol(0)
         fileTreeSizer.AddGrowableRow(1)
-        return fileTreeSizer
+        panel.SetSizer(fileTreeSizer)
+        return panel
+
+
+
+    def newDirTree(self, parent):
+        cwd =  os.getcwd()
+        C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+        workspacePath = C_root + subdir + "workspace"
+        dirTree = MyTree(parent, workspacePath, self.textArea)
+        dirTree.ExpandAll()
+        return dirTree
