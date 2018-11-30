@@ -5,12 +5,72 @@ import keyword
 import wx, os
 
 
+class CodeNotebook(wx.Notebook):
+
+    def __init__(self, parent, rootPath):
+        wx.Notebook.__init__(self, parent, style=wx.CLIP_CHILDREN)
+        self.openCards = {}
+        self.rootPath = rootPath
+
+    def newTabIfNotExists(self, fileToOpen):
+        with open(fileToOpen, "r") as f:
+            cardName = fileToOpen.split(self.rootPath)
+            cardName = cardName[1][1:] # [1:] -> cutting off the first slash
+            if self.openCards.__contains__(cardName):
+                self.openCards[cardName].SetValue(f.read())
+            else:
+                ta = self.newTextArea(cardName)
+                ta.SetValue(f.read())
+                self.openCards[cardName] = ta
+                self.AddPage(ta, cardName)
+            self.SetSelection(self.SetSelection(self.findPageByName(cardName)))
+
+    def findPageByName(self, cardName):
+        for i in range (self.GetPageCount()):
+            if self.GetPageText(i) == cardName:
+                return i
+        return None
+
+    def newTextArea(self, title):
+        self.textArea = stc.StyledTextCtrl(parent=self, style=wx.TE_MULTILINE)
+        with open("../workspace/{}".format(title), "r") as f:
+            self.textArea.SetValue(f.read())
+        self.textArea.SetLexer(stc.STC_LEX_PYTHON)
+        self.textArea.SetStyleBits(5)
+        self.textArea.SetMarginWidth(0, 10)
+        self.textArea.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
+        faces = {'times': 'Times New Roman',
+                 'mono': 'Courier New',
+                 'helv': 'Arial',
+                 'other': 'Comic Sans MS',
+                 'size': 10,
+                 'size2': 8,
+                 }
+        self.textArea.SetKeyWords(0, " ".join(keyword.kwlist))
+        self.textArea.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
+        self.textArea.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+        self.textArea.SetCaretForeground("BLUE")
+        return self.textArea
+
+
 class MyTree(wx.TreeCtrl):
-    def __init__(self, parent, rootPath, openCards):
+    def __init__(self, parent, rootPath, notebook):
         super(MyTree, self).__init__(parent)
         self.__collapsing = True
-        self.openCards = openCards
         self.rootPath = rootPath
+        self.notebook = notebook
 
         il = wx.ImageList(16, 16)
         self.folderidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, (16, 16)))
@@ -37,78 +97,21 @@ class MyTree(wx.TreeCtrl):
             parts.insert(0, self.GetItemText(parent))
             parent = self.GetItemParent(parent)
         fileToOpen = "\\".join(parts)
-        with open(fileToOpen, "r") as f:
-            cardName = fileToOpen.split(self.rootPath)[1].replace("\\", "")
-            if self.openCards.__contains__(cardName): 
-                self.openCards[cardName].SetValue(f.read())
-            else:
-                ta = self.GetGrandParent().newTextArea()
-                ta.SetValue(f.read())
-                self.openCards[cardName] = ta
-
+        self.notebook.newTabIfNotExists(fileToOpen)
 
 class Notepad(wx.SplitterWindow):
     def __init__(self, parent, editor):
         wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.editor = editor
-        self.openCards = {}
         self.workspacePath = self.getWorkspacePath()
         self.SetMinimumPaneSize(1)
-        self.SplitVertically(self.newNotebook(self), self.newFileTree())
+        self.SplitVertically(self.newNotebook(), self.newFileTree())
         self.SetSashPosition(1000)
 
-    def newNotebook(self, parent):
-        self.notebook = wx.Notebook(parent, style=wx.CLIP_CHILDREN)
-        self.notebook.AddPage(self.newTextArea(self.notebook, "hadamard.py"), "hadamard.py")
+    def newNotebook(self):
+        self.notebook = CodeNotebook(self, self.workspacePath)
+        self.notebook.newTabIfNotExists("{}/hadamard.py".format(self.workspacePath))
         return self.notebook
-
-    def newTextArea(self, parent,  title):
-        self.textArea = stc.StyledTextCtrl(parent = parent, style=wx.TE_MULTILINE)
-        with open("../workspace/{}".format(title), "r") as f:
-            self.textArea.SetValue(f.read())
-        self.textArea.SetLexer(stc.STC_LEX_PYTHON)
-        self.textArea.SetStyleBits(5)
-        self.textArea.SetMarginWidth(0, 10)
-        self.textArea.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-        faces = {'times': 'Times New Roman',
-                 'mono': 'Courier New',
-                 'helv': 'Arial',
-                 'other': 'Comic Sans MS',
-                 'size': 10,
-                 'size2': 8,
-                 }
-        self.textArea.SetKeyWords(0, " ".join(keyword.kwlist))
-        # Python styles
-        # Default
-        self.textArea.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        # Comments
-        self.textArea.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
-        # Number
-        self.textArea.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
-        # String
-        self.textArea.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        # Single quoted string
-        self.textArea.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        # Keyword
-        self.textArea.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
-        # Triple quotes
-        self.textArea.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Triple double quotes
-        self.textArea.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Class name definition
-        self.textArea.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
-        # Function or method name definition
-        self.textArea.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
-        # Operators
-        self.textArea.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
-        # Identifiers
-        self.textArea.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        # Comment-blocks
-        self.textArea.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
-        # End of line where string is not closed
-        self.textArea.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
-        self.textArea.SetCaretForeground("BLUE")
-        return self.textArea
 
     def newFileTree(self):
         panel = wx.Panel(self)
@@ -127,6 +130,6 @@ class Notepad(wx.SplitterWindow):
         return workspacePath
 
     def newDirTree(self, parent):
-        dirTree = MyTree(parent, self.workspacePath, self.openCards)
+        dirTree = MyTree(parent, self.workspacePath, self.notebook)
         dirTree.ExpandAll()
         return dirTree
