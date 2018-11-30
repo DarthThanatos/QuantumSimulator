@@ -6,10 +6,11 @@ import wx, os
 
 
 class MyTree(wx.TreeCtrl):
-    def __init__(self, parent, rootPath, textArea):
+    def __init__(self, parent, rootPath, openCards):
         super(MyTree, self).__init__(parent)
         self.__collapsing = True
-        self.textArea = textArea
+        self.openCards = openCards
+        self.rootPath = rootPath
 
         il = wx.ImageList(16, 16)
         self.folderidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, (16, 16)))
@@ -37,7 +38,13 @@ class MyTree(wx.TreeCtrl):
             parent = self.GetItemParent(parent)
         fileToOpen = "\\".join(parts)
         with open(fileToOpen, "r") as f:
-            self.textArea.SetValue(f.read())
+            cardName = fileToOpen.split(self.rootPath)[1].replace("\\", "")
+            if self.openCards.__contains__(cardName): 
+                self.openCards[cardName].SetValue(f.read())
+            else:
+                ta = self.GetGrandParent().newTextArea()
+                ta.SetValue(f.read())
+                self.openCards[cardName] = ta
 
 
 class Notepad(wx.SplitterWindow):
@@ -45,17 +52,18 @@ class Notepad(wx.SplitterWindow):
         wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.editor = editor
         self.openCards = {}
+        self.workspacePath = self.getWorkspacePath()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.newNotebook(self), self.newFileTree())
         self.SetSashPosition(1000)
 
     def newNotebook(self, parent):
         self.notebook = wx.Notebook(parent, style=wx.CLIP_CHILDREN)
-        self.notebook.AddPage(self.newTextArea(self, "hadamard.py"), "name")
+        self.notebook.AddPage(self.newTextArea(self.notebook, "hadamard.py"), "hadamard.py")
         return self.notebook
 
-    def newTextArea(self,parent,  title):
-        self.textArea = stc.StyledTextCtrl(parent, style=wx.TE_MULTILINE)
+    def newTextArea(self, parent,  title):
+        self.textArea = stc.StyledTextCtrl(parent = parent, style=wx.TE_MULTILINE)
         with open("../workspace/{}".format(title), "r") as f:
             self.textArea.SetValue(f.read())
         self.textArea.SetLexer(stc.STC_LEX_PYTHON)
@@ -99,7 +107,6 @@ class Notepad(wx.SplitterWindow):
         self.textArea.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
         # End of line where string is not closed
         self.textArea.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
-
         self.textArea.SetCaretForeground("BLUE")
         return self.textArea
 
@@ -113,10 +120,13 @@ class Notepad(wx.SplitterWindow):
         panel.SetSizer(fileTreeSizer)
         return panel
 
-    def newDirTree(self, parent):
+    def getWorkspacePath(self):
         cwd =  os.getcwd()
         C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
-        workspacePath = C_root + subdir + "workspace"
-        dirTree = MyTree(parent, workspacePath, self.textArea)
+        workspacePath = C_root + subdir + "workspace"        
+        return workspacePath
+
+    def newDirTree(self, parent):
+        dirTree = MyTree(parent, self.workspacePath, self.openCards)
         dirTree.ExpandAll()
         return dirTree
