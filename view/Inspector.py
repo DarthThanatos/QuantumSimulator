@@ -18,12 +18,13 @@ class Inspector(wx.MDIChildFrame):
     inspWidth = 0
     bottomHeight = 0
 
-    def __init__(self, parent):
+    def __init__(self, parent, gateMediator):
 
         wx.MDIChildFrame.__init__(self, id=wxID_INSPECTORFRAME, name='', parent=parent,
               pos=wx.Point(363, 272), style=wx.SIMPLE_BORDER,
               title='Inspector')
 
+        self.gateMediator = gateMediator
         self.up_bmp = wx.Image('../Images/Inspector/Up.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap()
         self.paletteImages = wx.ImageList(height=24, width=24)
 

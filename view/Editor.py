@@ -173,12 +173,13 @@ class Editor(wx.MDIChildFrame):
 
 
 
-    def __init__(self, parent, id, inspector):
+    def __init__(self, parent, gateMediator):
 
         wx.MDIChildFrame.__init__(self, id=wxID_EDITORFRAME, name='', parent=parent,
               pos=wx.Point(68, 72), size=wx.Size(810, 515),
                                   style=wx.SIMPLE_BORDER,
               title='Editor')
+        self.gateMediator = gateMediator
 
         self.setDefaultSize()
         self.modelImageList = wx.ImageList(height=16, width=16)
@@ -213,15 +214,13 @@ class Editor(wx.MDIChildFrame):
         self.SetToolBar(self.toolBar)
         self.SetIcon(wx.Icon(self.editorIcon))
 
-        self.inspector = inspector
-
         self.toolAccels = []
         self.tools = {}
         self.numFixedPages = 0
 
         # Explorer
-        self.explorerPageIdx = self.addExplorerPage('Explorer')
-        self.explorerPageIdx = self.addExplorerPage('Circuit', Circuit)
+        self.notepad = self.addExplorerPage('Explorer', gateMediator=gateMediator)
+        self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
 
         self.winDimsMenu = wx.Menu()
         self.winDimsMenu.Append(wxID_EDITORWINDIMSLOAD, 'Load',
@@ -286,6 +285,9 @@ class Editor(wx.MDIChildFrame):
 
         self.tabs.SetMinSize(wx.DefaultSize)
 
+    def stimula(self, shouldStimulate, gate = None):
+        self.circuit.stimula(shouldStimulate, gate)
+
     def setDefaultSize(self):
         paletteHeight = 120
         editorScreenWidthPerc = 0.73
@@ -311,14 +313,11 @@ class Editor(wx.MDIChildFrame):
     def OnPythonHelpToolClick(self, ev):
         pass
 
-    def addExplorerPage(self, name, Page=Notepad):
-        explorerPage = Page(self.tabs, self)
+    def addExplorerPage(self, name, gateMediator, Page=Notepad):
+        explorerPage = Page(self.tabs, gateMediator)
         self.tabs.AddPage(explorerPage, name, imageId=wx.NewId())
         self.numFixedPages += 1
-        return self.tabs.GetPageCount()-1
-
-
-
+        return explorerPage
 
 
 sbfIcon, sbfBrwsBtns, sbfStatus, sbfCrsInfo, sbfProgress = range(5)

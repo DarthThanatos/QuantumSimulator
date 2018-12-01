@@ -11,11 +11,12 @@ class UpperMenu(wx.MDIChildFrame):
 
     palettePages =[]
 
-    def __init__(self, parent):
+    def __init__(self, parent, gateMediator):
         wx.MDIChildFrame.__init__(self,
               id=wxID_BOAFRAME, name='', parent=parent, pos=wx.Point(116, 275),
               size=wx.Size(645, 74), style=   wx.SIMPLE_BORDER,
               title="SimQuant - Python Quantum scripts IDE & Quantum Gates Builder")
+        self.gateMediator = gateMediator
 
         self.toolBar = wx.ToolBar(id=wxID_BOAFRAMETOOLBAR, name='toolBar',
               parent=self, pos=wx.Point(0, 0), size=wx.Size(637, 24),
@@ -55,11 +56,9 @@ class UpperMenu(wx.MDIChildFrame):
             screenWidth - windowManagerSide * 2 + 11,
             paletteHeight)
 
-    def initUpperMenu(self, inspector, editor):
-        self.inspector = inspector
-        self.editor = editor
+    def initUpperMenu(self):
         palettePage = PanelPalettePage(self.palette, "New",
-              '../Images/Palette/', self)
+              '../Images/Palette/', self, self.gateMediator)
         paletteLists = {'New': ["X", "Y", "Z", "T", "H"]}
 
         for modelName in paletteLists['New']:
@@ -75,7 +74,7 @@ class UpperMenu(wx.MDIChildFrame):
         return mID
 
     def OnInspectorToolClick(self, event):
-        self.inspector.restore()
+        pass
 
     def OnEditorToolClick(self, event):
         pass
@@ -112,7 +111,7 @@ class UpperMenu(wx.MDIChildFrame):
 
 
     def OnCreateNew(self, name, controller):
-        self.editor.addNewPage(name, controller)
+        pass
 
     # noinspection PyMethodOverriding
     def Iconize(self, iconize):
@@ -125,11 +124,11 @@ class UpperMenu(wx.MDIChildFrame):
 class PanelPalettePage(wx.Panel):
     buttonSep = 11
     buttonBorder = 7
-    def __init__(self, parent, name, bitmapPath, palette):
+    def __init__(self, parent, name, bitmapPath, palette, gateMediator):
         # default size provided for better sizing on GTK where notebook page
         # size isn't available at button creation time
         wx.Panel.__init__(self, parent, -1, size=(44, 44))
-
+        self.gateMediator = gateMediator
         self.palette = palette
         self.name = name
         self.bitmapPath = bitmapPath
@@ -172,6 +171,7 @@ class PanelPalettePage(wx.Panel):
 
     def addGateButton(self, name, btnType):
         def gate_btn_fun(event):
+            self.gateMediator.gateSelected(name)
             self.GetParent().GetParent().GetParent().SetCursor(wx.Cursor(wx.Image('../Images/Palette/{}.png'.format(name))))
         mID = PanelPalettePage.addButton(self, name, gate_btn_fun, btnType)
 

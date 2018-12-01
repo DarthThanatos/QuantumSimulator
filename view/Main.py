@@ -1,5 +1,6 @@
 import wx
 
+from view.GateMediator import GateMediator
 from view.LoadingScreen import LoadingScreen
 from view.Inspector import Inspector
 from view.UpperMenu import UpperMenu
@@ -24,11 +25,11 @@ class SimulatorApp(wx.App):
     def OnKeyUP(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
-            self.frame.SetCursor(wx.NullCursor)
+            self.gateMediator.gateUnselected()
         event.Skip()
 
     def OnRMClicked(self, ev):
-        self.frame.SetCursor(wx.NullCursor)
+        self.gateMediator.gateUnselected()
 
     def OnInit(self):
         wx.ToolTip.Enable(True)
@@ -48,15 +49,19 @@ class SimulatorApp(wx.App):
         loadingScreen.Show()
         loadingScreen.Update()
 
-        inspector = Inspector(frame)
+        self.gateMediator = GateMediator()
+
+        inspector = Inspector(frame, self.gateMediator)
         inspector.Show()
 
-        self.main = UpperMenu(frame)
-        self.main.initUpperMenu(inspector, frame)
+        editor = Editor(frame, self.gateMediator)
+        editor.Show()
+
+        self.main = UpperMenu(frame, self.gateMediator)
+        self.main.initUpperMenu()
         self.main.Show()
 
-        editor = Editor(frame, wx.NewId(), inspector)
-        editor.Show()
+        self.gateMediator.setViews(frame, main, editor, inspector)
         return True
 
     def OnLoaded(self):
