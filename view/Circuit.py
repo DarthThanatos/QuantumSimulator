@@ -88,6 +88,8 @@ class Circuit(wx.Panel):
         self.currentCord = Cord(None, None, self.CONNECTIONS_IN_ROW, self.CONNECTIONS_IN_COLUMN, self)
         self.gateNameToCreate = None
         self.selectedGate = None
+        self.movedGateShadow = None
+        self.movedShadowStartPos = (0,0)
         self.meshGraph = Graph()
         self.initMesh()
 
@@ -130,13 +132,26 @@ class Circuit(wx.Panel):
                                 self.currentCord.outCoords = (i,j)
                                 break
             self.Refresh()
-        if event.Dragging(): pass
+        if event.Dragging(): 
+            if self.selectedGate is None: return 
+            if not self.movedGateShadow:
+                self.movedGateShadow = wx.DragImage(self.selectedGate.bmp)
+                self.movedGateShadow.BeginDrag(self.movedShadowStartPos - self.selectedGate.coords[:2], self, False)
+            self.movedGateShadow.Move(event.GetPosition())
+            self.movedGateShadow.Show()
+
+    # def OnLeftUp(self, event):
+        # self.dragImage.EndDrag()
+        # pass
+
 
     def on_click(self, event):
         w, h = self.GetClientSize()
         m_x, m_y = event.GetPosition()
         self.placeCord(m_x, m_y, w, h)
         self.placeGate(m_x, m_y, w, h)
+        if self.selectedGate is not None:
+            self.movedShadowStartPos = event.GetPosition()
 
     def placeCord(self,m_x, m_y, w, h):
         if not self.shouldStimulate:
