@@ -3,6 +3,20 @@ import wx
 from view.GateTile import GateTile
 
 
+class CircuitSlot(wx.Rect2D):
+    def __init__(self, i, j, coords, gate = None):
+        wx.Rect2D.__init__(self, *coords)
+        self.gate = gate
+        self.i = i
+        self.j = j
+
+    def drawStimula(self, dc):
+        if self.gate is None:
+            w, h = self.GetRight() - self.GetLeft(), self.GetBottom() - self.GetTop()
+            # print(*self.GetPosition(), *self.GetSize())
+            dc.DrawRectangle(*self.GetPosition(),self.GetRight() - self.GetLeft(), self.GetBottom() - self.GetTop())
+
+
 class GatePlacer:
 
     def __init__(self, circuit, conn_in_row, conn_in_column, pointRad, point_miss_dist):
@@ -13,6 +27,8 @@ class GatePlacer:
         self.POINT_RADIUS = pointRad
         self.POINT_MISS_DIST = point_miss_dist
         self.gates = []
+        self.circuitSlots = []
+        self.initCircuitSlots()
 
     def GetClientSize(self):
         return self.circuit.GetClientSize()
@@ -64,13 +80,30 @@ class GatePlacer:
             if gate.collides(m_x, m_y): return True
         return False
 
-    def drawGateStimula(self, dc):
-        dc.SetPen(wx.Pen(wx.YELLOW))
+    def initCircuitSlots(self):
         w, h = self.GetClientSize()
-        g_w =  w/ self.CONNECTIONS_IN_ROW
-        g_h = h/self.CONNECTIONS_IN_COLUMN
+        s_w =  w/ self.CONNECTIONS_IN_ROW
+        s_h = h/self.CONNECTIONS_IN_COLUMN
         for i in range(self.CONNECTIONS_IN_COLUMN):
+            self.circuitSlots.append([])
             for j in range(self.CONNECTIONS_IN_ROW):
                 x = w / self.CONNECTIONS_IN_ROW * j
                 y = h / self.CONNECTIONS_IN_COLUMN * i
-                dc.DrawRectangle(x,y + g_h/2, g_w, g_h)
+                circuitSlot = CircuitSlot(i, j, coords = (x, y + s_h/2, s_w, s_h))
+                self.circuitSlots[i].append(circuitSlot)
+
+
+    def drawGateStimula(self, dc):
+        dc.SetPen(wx.Pen(wx.YELLOW))
+        for i in range(self.CONNECTIONS_IN_COLUMN):
+             for j in range(self.CONNECTIONS_IN_ROW):
+                 self.circuitSlots[i][j].drawStimula(dc)
+
+        # w, h = self.GetClientSize()
+        # g_w =  w/ self.CONNECTIONS_IN_ROW
+        # g_h = h/self.CONNECTIONS_IN_COLUMN
+        # for i in range(self.CONNECTIONS_IN_COLUMN):
+        #     for j in range(self.CONNECTIONS_IN_ROW):
+        #         x = w / self.CONNECTIONS_IN_ROW * j
+        #         y = h / self.CONNECTIONS_IN_COLUMN * i
+        #         dc.DrawRectangle(x,y + g_h/2, g_w, g_h)
