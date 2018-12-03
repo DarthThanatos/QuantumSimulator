@@ -3,18 +3,16 @@ import wx
 from view.GateTile import GateTile
 
 
-class CircuitSlot(wx.Rect2D):
+class CircuitSlot:
     def __init__(self, i, j, coords, gate = None):
-        wx.Rect2D.__init__(self, *coords)
+        self.rect = wx.Rect2D(*coords)
         self.gate = gate
         self.i = i
         self.j = j
 
     def drawStimula(self, dc):
         if self.gate is None:
-            w, h = self.GetRight() - self.GetLeft(), self.GetBottom() - self.GetTop()
-            # print(*self.GetPosition(), *self.GetSize())
-            dc.DrawRectangle(*self.GetPosition(),self.GetRight() - self.GetLeft(), self.GetBottom() - self.GetTop())
+            dc.DrawRectangle(*self.rect.GetPosition(), *self.rect.GetSize())
 
 
 class GatePlacer:
@@ -28,7 +26,6 @@ class GatePlacer:
         self.POINT_MISS_DIST = point_miss_dist
         self.gates = []
         self.circuitSlots = []
-        self.initCircuitSlots()
 
     def GetClientSize(self):
         return self.circuit.GetClientSize()
@@ -89,15 +86,18 @@ class GatePlacer:
             for j in range(self.CONNECTIONS_IN_ROW):
                 x = w / self.CONNECTIONS_IN_ROW * j
                 y = h / self.CONNECTIONS_IN_COLUMN * i
-                circuitSlot = CircuitSlot(i, j, coords = (x, y + s_h/2, s_w, s_h))
+                circuitSlot = CircuitSlot(i, j, (x, y + s_h/2, s_w, s_h))
                 self.circuitSlots[i].append(circuitSlot)
 
 
     def drawGateStimula(self, dc):
+        if self.circuitSlots == []:
+            self.initCircuitSlots()
         dc.SetPen(wx.Pen(wx.YELLOW))
         for i in range(self.CONNECTIONS_IN_COLUMN):
              for j in range(self.CONNECTIONS_IN_ROW):
-                 self.circuitSlots[i][j].drawStimula(dc)
+                self.circuitSlots[i][j].drawStimula(dc)
+
 
         # w, h = self.GetClientSize()
         # g_w =  w/ self.CONNECTIONS_IN_ROW
