@@ -20,6 +20,8 @@ class Circuit(wx.Panel):
         self.cordPlacer = CordPlacer(self, self.CONNECTIONS_IN_ROW, self.CONNECTIONS_IN_COLUMN, self.POINT_RADIUS, self.POINT_MISS_DIST)
         self.gatePlacer = GatePlacer(self,  self.CONNECTIONS_IN_ROW, self.CONNECTIONS_IN_COLUMN, self.POINT_RADIUS, self.POINT_MISS_DIST)
         self.gateDragger = GateDragger(self)
+        self.selectedGate = None
+        self.selectedCord = None
         self.bind()
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.SetBackgroundColour(wx.WHITE)
@@ -27,9 +29,22 @@ class Circuit(wx.Panel):
     def bind(self):
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
-        self.Bind(wx.EVT_LEFT_UP, self.on_click)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+        self.Bind(wx.EVT_LEFT_UP, self.on_endclick)
         self.Bind(wx.EVT_RIGHT_UP, self.on_rclick)
         self.Bind(wx.EVT_MOTION, self.on_mouse_move)
+        self.GetParent().Bind(wx.EVT_CHAR, self.on_keyboard)
+
+    def on_keyboard(self, event):
+        keyCode = event.GetKeyCode()
+        if keyCode == wx.WXK_DELETE:
+            self.cordPlacer.removeSelectedCord()
+            self.gatePlacer.removeSelectedGate()
+            self.Refresh()
+
+
+    def on_endclick(self, event):
+        self.gateDragger.stopDraggingGate(*event.GetPosition())
 
     def stimula(self, shouldStimulate, gate=None):
         self.shouldStimulate = shouldStimulate
@@ -48,15 +63,16 @@ class Circuit(wx.Panel):
 
     def on_mouse_move(self, event):
         if not self.shouldStimulate: self.cordPlacer.moveCord(event)
-        self.gateDragger.dragGate(event, self.cordPlacer.selectedGate)
+        self.gateDragger.dragGate(event, self.selectedGate)
         self.Refresh()
 
     def on_click(self, event):
-        w, h = self.GetClientSize()
         m_x, m_y = event.GetPosition()
         if not self.shouldStimulate: self.cordPlacer.placeCord(self.gatePlacer.gates, m_x, m_y)
-        self.gatePlacer.placeGate(m_x, m_y, w, h, self.meshPlacer.meshGraph, self.gateMediator)
-        self.gateDragger.initDraggingGate(event,self.cordPlacer.selectedGate)
+        self.gatePlacer.placeGate(m_x, m_y, self.meshPlacer.meshGraph, self.gateMediator)
+        self.selectedGate = self.gatePlacer.detectGateSelection(m_x, m_y)
+        self.selectedCord = self.cordPlacer.detectCordSelection(m_x, m_y)
+        self.gateDragger.initDraggingGate(event, self.selectedGate)
         self.Refresh()
 
     def on_paint(self, event):
@@ -68,7 +84,6 @@ class Circuit(wx.Panel):
         self.cordPlacer.draw_unfinished_cord(dc, self.meshPlacer.meshGraph)
         self.gatePlacer.drawGates(dc)
         self.cordPlacer.drawCords(dc, self.meshPlacer.meshGraph)
-
-
+        if self.selectedGate is not None: self.selectedGate.drawSelectionIndicator(dc)
 
 

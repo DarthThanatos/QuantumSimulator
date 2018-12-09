@@ -7,6 +7,7 @@ class CircuitSlot:
     def __init__(self, i, j, coords, gate = None):
         self.rect = wx.Rect2D(*coords)
         self.gate = gate
+        self.coords = coords
         self.i = i
         self.j = j
 
@@ -32,50 +33,56 @@ class GatePlacer:
 
     def drawGates(self, dc):
         for gate in self.gates:
-            dc.DrawBitmap(gate.bmp, gate.coords[0], gate.coords[1])
-            if gate.filled[0]:
-                x = gate.inOutIds[0][1] * self.GetClientSize()[0] / self.CONNECTIONS_IN_ROW
-                y = gate.inOutIds[0][0] * self.GetClientSize()[1] / self.CONNECTIONS_IN_COLUMN
-                g_h = self.GetClientSize()[1] / self.CONNECTIONS_IN_COLUMN
-                dc.SetPen(wx.Pen(wx.BLUE))
-                dc.DrawCircle(x, y+ g_h, self.POINT_RADIUS)
-            if gate.filled[1]:
-                x = gate.inOutIds[1][1] * self.GetClientSize()[0] / self.CONNECTIONS_IN_ROW
-                y = gate.inOutIds[1][0] * self.GetClientSize()[1] / self.CONNECTIONS_IN_COLUMN
-                g_h = self.GetClientSize()[1] / self.CONNECTIONS_IN_COLUMN
-                dc.SetPen(wx.Pen(wx.BLUE))
-                dc.DrawCircle(x, y + g_h, self.POINT_RADIUS)
+            gate.drawGate(dc)
 
     def coordsToId(self, coords):
         i,j = coords
         return i * self.CONNECTIONS_IN_ROW + j
 
-    def placeGate(self, m_x, m_y, w, h, meshGraph, gateMediator):
-        for i in range(self.CONNECTIONS_IN_COLUMN):
-            for j in range(self.CONNECTIONS_IN_ROW):
-                x = w / self.CONNECTIONS_IN_ROW * j
-                y = h / self.CONNECTIONS_IN_COLUMN * i
-                if abs(m_x - x) < w / self.CONNECTIONS_IN_ROW:
-                    if abs(m_y - y) < h / self.CONNECTIONS_IN_COLUMN:
-                        if self.gateNameToCreate is not None:
-                            if not self.collisionExists(m_x, m_y):
-                                gate_w, gate_h = w / self.CONNECTIONS_IN_ROW, h / self.CONNECTIONS_IN_COLUMN
-                                self.gates.append(
-                                    GateTile(
-                                        self.gateNameToCreate,
-                                        '../Images/Palette/{}.png'.format(self.gateNameToCreate),
-                                        [(i, j), (i, j + 1)],
-                                        (x, y + gate_h / 2, gate_w, gate_h)
-                                    )
-                                )
-                                meshGraph.remove_edge(self.coordsToId((i,j)), self.coordsToId((i, j+1)))
-                                gateMediator.gateUnselected()
-                                break
+    def placeGate(self, m_x, m_y,meshGraph, gateMediator):
+        if self.gateNameToCreate is not None:
+            cs = self.mposToCircuitSlot(m_x, m_y)
+            if cs is not None and cs.gate is None:
+                self.gates.append(self.newGate(cs))
+                meshGraph.remove_edge(self.coordsToId((cs.i,cs.j)), self.coordsToId((cs.i, cs.j+1)))
+                gateMediator.gateUnselected()
 
-    def collisionExists(self, m_x, m_y):
-        for gate in self.gates:
-            if gate.collides(m_x, m_y): return True
-        return False
+    def mposToCircuitSlot(self, mx, my):
+        for i in range(self.circuitSlots.__len__()):
+            for j in range(self.circuitSlots[i].__len__()):
+                cs = self.circuitSlots[i][j]
+                if cs.rect.Contains((mx, my)):
+                    return cs
+        return None
+
+    def exchangeSlotsIfPossibleOnSelected(self, mx, my):
+        cs = self.mposToCircuitSlot(mx, my)
+        if cs is None:
+            return
+        if cs.gate is not None:
+            return
+        if self.circuit.selectedGate is None:
+            return
+
+        prev_cs = self.circuit.selectedGate.circuitSlot
+        prev_cs.gate = None
+        cs.gate = self.circuit.selectedGate
+        self.circuit.selectedGate.circuitSlot = cs
+
+        meshGraph = self.circuit.meshPlacer.meshGraph
+        meshGraph.add_edge(self.coordsToId((prev_cs.i, prev_cs.j)), self.coordsToId((prev_cs.i, prev_cs.j + 1)))
+        meshGraph.remove_edge(self.coordsToId((cs.i, cs.j)), self.coordsToId((cs.i, cs.j + 1)))
+
+    def newGate(self, circuitSlot):
+        gateTile = \
+        GateTile(
+            self.gateNameToCreate,
+            '../Images/Palette/{}.png'.format(self.gateNameToCreate),
+             self.circuit
+        )
+        gateTile.initGateTile(circuitSlot, self.POINT_RADIUS)
+        circuitSlot.gate = gateTile
+        return gateTile
 
     def initCircuitSlots(self):
         w, h = self.GetClientSize()
@@ -89,7 +96,6 @@ class GatePlacer:
                 circuitSlot = CircuitSlot(i, j, (x, y + s_h/2, s_w, s_h))
                 self.circuitSlots[i].append(circuitSlot)
 
-
     def drawGateStimula(self, dc):
         if self.circuitSlots == []:
             self.initCircuitSlots()
@@ -98,12 +104,15 @@ class GatePlacer:
              for j in range(self.CONNECTIONS_IN_ROW):
                 self.circuitSlots[i][j].drawStimula(dc)
 
+    def detectGateSelection(self, mx, my):
+        for gate in self.gates:
+            if gate.circuitSlot.rect.Contains((mx,my)): return gate
+        return None
 
-        # w, h = self.GetClientSize()
-        # g_w =  w/ self.CONNECTIONS_IN_ROW
-        # g_h = h/self.CONNECTIONS_IN_COLUMN
-        # for i in range(self.CONNECTIONS_IN_COLUMN):
-        #     for j in range(self.CONNECTIONS_IN_ROW):
-        #         x = w / self.CONNECTIONS_IN_ROW * j
-        #         y = h / self.CONNECTIONS_IN_COLUMN * i
-        #         dc.DrawRectangle(x,y + g_h/2, g_w, g_h)
+    def removeSelectedGate(self):
+        selectedGate = self.circuit.selectedGate
+        if selectedGate is None:
+            return
+        selectedGate.removeSelf()
+        self.gates.remove(selectedGate)
+        self.circuit.selectedGate = None
