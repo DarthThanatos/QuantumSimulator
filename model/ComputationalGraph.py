@@ -1,5 +1,7 @@
 # from model.Gate import Gate
 from numpy import tensordot, array
+from qutip import *
+from math import *
 
 class Node:
     def __init__(self, prevs, nexts, gate):
@@ -7,9 +9,10 @@ class Node:
         self.prevs = prevs
 
     def performComputations(self):
-        currentNode = nexts[0]
+        currentNode = self.nexts[0]
         for i in range(1, self.nexts.__len__()):
-            res = tensordot(res)
+            # res = tensordot(res)
+            pass
 
 
 class ComputationalGraph:
@@ -21,6 +24,8 @@ class ComputationalGraph:
     def performComputations(self):
         for vec in self.startVecs:
             pass
+
+
 
 zero = array([1., 0.])
 one = array([0., 1.])
@@ -38,3 +43,18 @@ print("t_2\n", t_2)
 print("t_3\n", t_3)
 print("x_x\n", x_x)
 print("yolo", tensordot(x_x, x_x, 0))
+
+ket0 = basis(N = 2, n = 0).unit()  # |0>
+ket1 = basis(N = 2, n = 1).unit()  # |1>
+print(ket0)
+print(ket1)
+
+coin_angle = 30
+C_hat = qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
+                    [sin(radians(coin_angle)), -cos(radians(coin_angle))]])
+print(C_hat)
+# print(ket0 @ C_hat.)
+
+b = Bloch()
+b.show()
+print(b.fig)

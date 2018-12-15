@@ -13,6 +13,10 @@ wxID_INSPECTORFRAMECONSTR = wx.NewId()
 wxID_INSPECTORFRAMEPROPS = wx.NewId()
 wxID_INSPECTORFRAMEEVENTS = wx.NewId()
 
+from qutip import Bloch
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+
 class Inspector(wx.MDIChildFrame):
 
     inspWidth = 0
@@ -235,6 +239,20 @@ class InspectorNotebook(wx.Notebook):
 wxID_EVTCATS = wx.NewId()
 wxID_EVTMACS = wx.NewId()
 
+class DefinitionsWindow(wx.ScrolledWindow):
+    def __init__(self, parent):
+        wx.ScrolledWindow. __init__(self, parent, -1,
+                          style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
+        self.figure = Figure()
+        FigureCanvas(self, -1, self.figure)
+        b = Bloch(self.figure)
+        b.make_sphere()
+
+    def initSize(self):
+        w,h = self.GetClientSize()
+        if w == 0 or h == 0: return
+        ppiw, ppih = wx.GetDisplayPPI()
+        self.figure.set_size_inches( (w / ppiw, w / ppiw))
 
 class EventsWindow(wx.SplitterWindow):
     """ Window that hosts event name values and event category selection """
@@ -244,8 +262,7 @@ class EventsWindow(wx.SplitterWindow):
 
         self.categories = wx.SplitterWindow(self, -1,
               style = wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.definitions = wx.ScrolledWindow(self, -1,
-              style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
+        self.definitions = DefinitionsWindow(self)
 
         self.SetMinimumPaneSize(20)
         self.SplitHorizontally(self.categories, self.definitions)
@@ -264,12 +281,17 @@ class EventsWindow(wx.SplitterWindow):
         self.categoryMacros.Bind(wx.EVT_LIST_ITEM_DESELECTED,
               self.OnMacClassDeselect, id=wxID_EVTMACS)
         self.categoryMacros.Bind(wx.EVT_LEFT_DCLICK, self.OnMacroSelect)
+        self.Bind(wx.EVT_SIZE, self.onresize)
 
         self.selMacClass = -1
 
         self.categories.SetMinimumPaneSize(20)
         self.categories.SplitVertically(self.categoryClasses, self.categoryMacros)
         self.categories.SetSashPosition(80)
+
+    def onresize(self, ev):
+        self.definitions.initSize()
+        ev.Skip()
 
     def setInspector(self, inspector):
         self.inspector = inspector
