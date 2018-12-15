@@ -7,8 +7,8 @@ from view.MeshPlacer import MeshPlacer
 
 
 class Circuit(wx.Panel):
-    CONNECTIONS_IN_ROW = 50
-    CONNECTIONS_IN_COLUMN = 30
+    CONNECTIONS_IN_ROW = 20
+    CONNECTIONS_IN_COLUMN = 10
     POINT_RADIUS = 2
     POINT_MISS_DIST = 4 #distance from the border of a point at which point is considered not selected
 
