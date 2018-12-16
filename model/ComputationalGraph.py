@@ -1,6 +1,4 @@
-# from model.Gate import Gate
 import numpy as np
-from numpy import tensordot, array, identity
 from qutip import *
 from math import *
 
@@ -11,9 +9,7 @@ class Node:
         self.prevs = prevs
 
     def performComputations(self):
-        currentNode = self.nexts[0]
         for i in range(1, self.nexts.__len__()):
-            # res = tensordot(res)
             pass
 
 
@@ -89,11 +85,9 @@ def ctrlXGate():
 def ctrlZGate():
     return Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims = [[2,2],[2,2]])
 
-
 def rotationGate(coin_angle):
     return qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
-                        [sin(radians(coin_angle)), -cos(radians(coin_angle))]])
-
+                        [sin(radians(coin_angle)), -cos(radians(coin_angle))]], dims=[[2],[2]])
 
 def denseCoding():
     register = tensor([ket1(), ket0(), ket0(), ket0()])
@@ -101,13 +95,6 @@ def denseCoding():
     message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([0,2,1,3])) * tensor([qeye(2), ctrlXGate(), qeye(2)])
     bell =  tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
     print(bell * message_closing * entanglement * register)
-
-def grover():
-    pass
-
-
-def quantumTeleportation():
-    pass
 
 def measure(qubitsN, bitN, register):
     proj0 = tensor([qeye(2)] * (bitN) + [ket0().proj()] + [qeye(2)] * (qubitsN - bitN - 1))
@@ -139,6 +126,77 @@ def measurementTest():
     res = measure(int(np.log2(N)), 3, res)
     printProbs(N, res)
 
+def quantumTeleportation():
+    register = ket("100")
+    mod = tensor(rotationGate(30), qeye(2), qeye(2))
+    register =  mod * register
+    print("\n\nquantum teleport, init register\n\n")
+    print(register)
+    printProbs(8, register)
+
+    entanglement =  tensor([qeye(2)] + [ctrlXGate()]) * tensor([qeye(2)]  + [hadamard_transform()] + [qeye(2)])
+    bell =  tensor([hadamard_transform()] + [qeye(2)] * 2) * tensor([ctrlXGate()] + [qeye(2)])
+    init = bell * entanglement * register
+    measured1 = measure(qubitsN=3, bitN=0, register=init)
+    measured2 = measure(qubitsN=3, bitN=1, register=measured1)
+    message_closing = (tensor([ctrlZGate()] + [qeye(2)]).permute([0,2,1])) * tensor([qeye(2), ctrlXGate()])
+    res = message_closing * measured2
+
+    print("\n\nquantum teleport, output register\n\n")
+    print(res)
+    printProbs(8, res)
+
+def entanglementSwapping():
+    register = ket("1110")
+    print("\n\nentanglement swapping, init register\n\n")
+    print(register)
+    printProbs(16, register)
+
+    entanglement_hadamards = tensor([hadamard_transform()] + [qeye(2)]  + [hadamard_transform()] + [qeye(2)])
+    entanglement_cnots = tensor([ctrlXGate()] * 2)
+    bob_alice_entanglements = entanglement_cnots * entanglement_hadamards
+    bell =  tensor([qeye(2)] + [hadamard_transform()] + [qeye(2)] * 2) * tensor([qeye(2)] + [ctrlXGate()] + [qeye(2)])
+    init = bell * bob_alice_entanglements * register
+    measured1 = measure(qubitsN=4, bitN=1, register=init)
+    measured2 = measure(qubitsN=4, bitN=2, register=measured1)
+    message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([1,3,0,2])) * tensor([qeye(2)] * 2 + [ctrlXGate()])
+    res = message_closing * measured2
+
+    print("\n\nentanglement swapping, output register\n\n")
+    print(res)
+    printProbs(16, res)
+
+def tofolli210():
+    return Qobj([
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0, 0, 1, 0]
+    ], dims=[[2,2,2], [2,2,2]])
+
+def grover():
+    register =  hadamard_transform(3) * ket("001")
+    oracle =  tofolli210()
+    hs = tensor(hadamard_transform(2), qeye(2))
+    xs = tensor([sigmax()] * 2 + [qeye(2)])
+    inverse_core = tensor(qeye(2), hadamard_transform(), qeye(2)) * tensor(ctrlXGate(), qeye(2)) * tensor(qeye(2), hadamard_transform(), qeye(2))
+    before_measurement = hs * xs * inverse_core * xs * hs * oracle * register
+    measured1 = measure(qubitsN=3, bitN=0, register=before_measurement)
+    measured2 = measure(qubitsN=3, bitN=1, register=measured1)
+    measured3 = measure(qubitsN=3, bitN=2, register=measured2)
+    print(measured3)
+    printProbs(8, measured3)
+
+def simon():
+    pass
+
+def shor():
+    pass
+
 def test():
     print(ctrlGateFromTransformation(ctrlXFun, 4))
     print(ctrlGateFromTransformation(ctrlZFun, 4))
@@ -156,8 +214,8 @@ def test():
 
     denseCoding()
     measurementTest()
-
-
-
+    quantumTeleportation()
+    entanglementSwapping()
+    grover()
 
 test()
