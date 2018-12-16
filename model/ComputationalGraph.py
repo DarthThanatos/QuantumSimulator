@@ -82,11 +82,18 @@ def ctrlGateFromTransformation(transform, N):
             res[i][j] = (bra_i * t).data[0,0]
     return res
 
+def ctrlXGate():
+    return Qobj([[1,0,0,0], [0,1,0,0],[0,0,0,1],[0,0,1,0]], dims = [[2,2],[2,2]])
+
+def ctrlZGate():
+    return Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims = [[2,2],[2,2]])
 
 def denseCoding():
-    ketx = basis(2, 0).unit()
-    kety = basis(2, 1).unit()
-    Z = qutip.Qobj([[1., 0.], [0., -1.]])
+    register = tensor([ket1(), ket0(), ket0(), ket0()])
+    entanglement =  tensor([qeye(2)] * 2 + [ctrlXGate()]) * tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)])
+    message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([0,2,1,3])) * tensor([qeye(2), ctrlXGate(), qeye(2)])
+    bell =  tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
+    print( bell * message_closing * entanglement * register)
 
 def quantumTeleportation():
     pass
@@ -109,9 +116,11 @@ def test():
     print(tensor(ket0(), tensor(ket0(), ket1())))
     print(tensor(ket0(), tensor(ket0(), ket1())).permute([2,1,0]))
 
-    k001 = tensor(Qobj(tensor(ket0(), ket0()).data), ket1())
+    k001 = tensor([ket0(), ket0(), ket1()])
     print(k001)
-    cZ = Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]])
+    cZ = Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims=[[2,2], [2,2]])
     print(tensor(cZ, qeye(2)) * k001)
-    # help(k001.data)
+
+    denseCoding()
+
 test()
