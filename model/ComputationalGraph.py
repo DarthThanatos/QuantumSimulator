@@ -197,21 +197,16 @@ def simon():
 def shor():
     pass
 
-def test():
+def ctrlCreationTest():
     print(ctrlGateFromTransformation(ctrlXFun, 4))
     print(ctrlGateFromTransformation(ctrlZFun, 4))
     transX = lambda N, j: ctrlXFun_(basisTensor(N, j))
     transZ = lambda N, j: ctrlZFun_(basisTensor(N, j))
     print(ctrlGateFromTransformation(transX, 4))
     print(ctrlGateFromTransformation(transZ, 4))
-    print(tensor(ket0(), tensor(ket0(), ket1())))
-    print(tensor(ket0(), tensor(ket0(), ket1())).permute([2,1,0]))
 
-    k001 = tensor([ket0(), ket0(), ket1()])
-    print(k001)
-    cZ = Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims=[[2,2], [2,2]])
-    print(tensor(cZ, qeye(2)) * k001)
-
+def test():
+    ctrlCreationTest()
     denseCoding()
     measurementTest()
     quantumTeleportation()
