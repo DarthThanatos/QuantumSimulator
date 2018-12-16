@@ -1,4 +1,5 @@
 # from model.Gate import Gate
+import numpy as np
 from numpy import tensordot, array, identity
 from qutip import *
 from math import *
@@ -88,23 +89,55 @@ def ctrlXGate():
 def ctrlZGate():
     return Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims = [[2,2],[2,2]])
 
-def denseCoding():
-    register = tensor([ket1(), ket0(), ket0(), ket0()])
-    entanglement =  tensor([qeye(2)] * 2 + [ctrlXGate()]) * tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)])
-    message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([0,2,1,3])) * tensor([qeye(2), ctrlXGate(), qeye(2)])
-    bell =  tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
-    print( bell * message_closing * entanglement * register)
-
-def quantumTeleportation():
-    pass
 
 def rotationGate(coin_angle):
     return qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
                         [sin(radians(coin_angle)), -cos(radians(coin_angle))]])
 
 
+def denseCoding():
+    register = tensor([ket1(), ket0(), ket0(), ket0()])
+    entanglement =  tensor([qeye(2)] * 2 + [ctrlXGate()]) * tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)])
+    message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([0,2,1,3])) * tensor([qeye(2), ctrlXGate(), qeye(2)])
+    bell =  tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
+    print(bell * message_closing * entanglement * register)
+
 def grover():
     pass
+
+
+def quantumTeleportation():
+    pass
+
+def measure(qubitsN, bitN, register):
+    proj0 = tensor([qeye(2)] * (bitN) + [ket0().proj()] + [qeye(2)] * (qubitsN - bitN - 1))
+    proj1 = tensor([qeye(2)] * (bitN) + [ket1().proj()] + [qeye(2)] * (qubitsN - bitN - 1))
+    prob0 = np.sqrt(proj0.matrix_element(register.dag(), register))
+    if np.random.rand(1)[0] <= prob0:
+        return proj0 * register / np.sqrt(proj0.matrix_element(register.dag(), register))
+    else:
+        return proj1 * register / np.sqrt(proj1.matrix_element(register.dag(), register))
+
+
+def printProbs(N, register):
+    print("{}\nProbs:".format("="*20))
+    for i in range(N):
+        binS = bin(i)[2:].zfill(int(log2(N)))
+        qbit = ket(binS).unit()
+        ampl = (qbit.dag().unit() * register)[0, 0]
+        prob = np.abs(ampl) ** 2
+        if prob > 0:
+            print("|{0}> = Amplitude: {1:.2f} Probability: {2:.4f}".format(binS, ampl, prob))
+    print("{}\n".format("="*20))
+
+def measurementTest():
+    N = 32
+    register = ket("01001")
+    res = tensor([hadamard_transform()]*4 + [qeye(2)]) * register
+    printProbs(N, res)
+    res = measure(int(np.log2(N)), 0, res)
+    res = measure(int(np.log2(N)), 3, res)
+    printProbs(N, res)
 
 def test():
     print(ctrlGateFromTransformation(ctrlXFun, 4))
@@ -122,5 +155,9 @@ def test():
     print(tensor(cZ, qeye(2)) * k001)
 
     denseCoding()
+    measurementTest()
+
+
+
 
 test()
