@@ -59,15 +59,6 @@ def telegraph_noise(t, sites, qstate, freq, amp):
     return dstate
 
 
-# Quantum walk generator: outputs the evolved wave function after 't' steps.
-def qwalk_gen_nonmarkov(t, qubit_state, coin_angle, freq, amp):
-    sites = 2 * t + 1
-    Position_state = basis(sites, t)
-    Psi = ket2dm(tensor(qubit_state, Position_state))  # Initial state - \rho(0)
-    W_hat = walk(sites, coin_angle)  # Total Qwalk operator
-    for i in range(1, t):  # Apply the walk operator 't' times
-        Psi = W_hat * telegraph_noise(i, sites, Psi, freq, amp) * W_hat.dag()  # krauss op
-    return Psi  # returns decohered state
 
 
 # von neumann entropy:
@@ -122,6 +113,15 @@ def plot_discord(dis_data):
     plt.xlabel(r'$t$')
     plt.show()
 
+# Quantum walk generator: outputs the evolved wave function after 't' steps.
+def qwalk_gen_nonmarkov(t, qubit_state, coin_angle, freq, amp):
+    sites = 2 * t + 1
+    Position_state = basis(sites, t)
+    Psi = ket2dm(tensor(qubit_state, Position_state))  # Initial state - \rho(0)
+    W_hat = walk(sites, coin_angle)  # Total Qwalk operator
+    for i in range(1, t):  # Apply the walk operator 't' times
+        Psi = W_hat * telegraph_noise(i, sites, Psi, freq, amp) * W_hat.dag()  # krauss op
+    return Psi  # returns decohered state
 
 # the main instance of the program
 if __name__ == "__main__":  # this line is not necessary(good practice to use though, will be convinient when writing classes)
