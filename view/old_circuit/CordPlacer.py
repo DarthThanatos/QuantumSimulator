@@ -1,4 +1,4 @@
-from view.Cord import Cord
+from view.old_circuit.Cord import Cord
 
 
 class CordPlacer:

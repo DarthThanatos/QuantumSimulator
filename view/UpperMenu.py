@@ -57,7 +57,7 @@ class UpperMenu(wx.MDIChildFrame):
             paletteHeight)
 
     def initUpperMenu(self):
-        palettePage = PanelPalettePage(self.palette, "New",
+        palettePage = PanelPalettePage(self.palette, "Gates",
               '../Images/Palette/', self, self.gateMediator)
         paletteLists = {'New': ["X", "Y", "Z", "T", "H"]}
 
@@ -151,7 +151,7 @@ class PanelPalettePage(wx.Panel):
 
         _, _, screenWidth, _ = wx.GetClientDisplayRect()
         btnXOffs = (screenWidth - 5 * 75)/ 2
-        newButton = btnType(self, mID, None, wx.Point(self.posX + btnXOffs, self.posY),
+        newButton = btnType(self, mID, None, wx.Point(self.posX + btnXOffs, self.posY + 15),
                            wx.Size(width, height))
 
         newButton.SetBezelWidth(1)

@@ -1,6 +1,6 @@
 import wx
 
-from view.GateTile import GateTile
+from view.old_circuit.GateTile import GateTile
 
 
 class CircuitSlot:

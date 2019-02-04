@@ -1,6 +1,7 @@
 import wx
 
-from view.ConnectionPoint import ConnectionPoint
+from view.old_circuit.ConnectionPoint import ConnectionPoint
+
 
 class GateTile:
     def __init__(self, name, imgPath, circuit):

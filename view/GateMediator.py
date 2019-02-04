@@ -11,11 +11,14 @@ class GateMediator:
     def setViews(self, frame, upperMenu, editor, inspector):
         self.upperMenu = upperMenu
         self.editor = editor
+        # self.circuit = self.editor.circuit
+        self.circuitStd = self.editor.circuitStd
         self.inspector = inspector
         self.frame = frame
 
     def gateSelected(self, gate):
-        self.editor.stimula(True, gate)
+        # self.circuit.stimula(True, gate)
+        self.circuitStd.stimula(True, gate)
 
     def gateUnselected(self):
         self.frame.SetCursor(wx.NullCursor)

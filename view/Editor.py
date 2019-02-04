@@ -1,9 +1,9 @@
 import threading
 
-
 from util.Utils import *
-from view.Circuit import Circuit
 from view.Notepad import Notepad
+from view.new_circuit.CircuitStd import CircuitStd
+from view.old_circuit.Circuit import Circuit
 
 [wxID_EDITORFRAME, wxID_EDITORFRAMESTATUSBAR, wxID_EDITORFRAMETABS,
  wxID_EDITORFRAMETABSSPLITTER, wxID_EDITORFRAMETOOLBAR,
@@ -220,7 +220,8 @@ class Editor(wx.MDIChildFrame):
 
         # Explorer
         self.notepad = self.addExplorerPage('Explorer', gateMediator=gateMediator)
-        self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
+        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator, Page=CircuitStd)
+        # self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
 
         self.winDimsMenu = wx.Menu()
         self.winDimsMenu.Append(wxID_EDITORWINDIMSLOAD, 'Load',
@@ -286,7 +287,7 @@ class Editor(wx.MDIChildFrame):
         self.tabs.SetMinSize(wx.DefaultSize)
 
     def stimula(self, shouldStimulate, gate = None):
-        self.circuit.stimula(shouldStimulate, gate)
+        self.circuitStd.stimula(shouldStimulate, gate)
 
     def setDefaultSize(self):
         paletteHeight = 120

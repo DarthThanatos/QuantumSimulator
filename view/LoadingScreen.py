@@ -183,7 +183,10 @@ class StaticTextPF:
                 s = s.encode(sys.getdefaultencoding(), 'replace')
                 sys.__stdout__.write(s)
 
-        wx.Yield()
+        # try:
+        #     wx.Yield()
+        # except Exception as e:
+        #     print(e)
 
 wxEVT_MOD_CNT_UPD = wx.NewId()
 EVT_MOD_CNT_UPD = wx.PyEventBinder(wxEVT_MOD_CNT_UPD)

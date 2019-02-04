@@ -1,9 +1,9 @@
 import wx
 
-from view.CordPlacer import CordPlacer
-from view.GateDragger import GateDragger
-from view.GatePlacer import GatePlacer
-from view.MeshPlacer import MeshPlacer
+from view.old_circuit.CordPlacer import CordPlacer
+from view.old_circuit.GateDragger import GateDragger
+from view.old_circuit.GatePlacer import GatePlacer
+from view.old_circuit.MeshPlacer import MeshPlacer
 
 
 class Circuit(wx.Panel):
