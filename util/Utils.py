@@ -41,3 +41,10 @@ def newScaledImgBitmap(image_path, size):
 
 def euclDist(p1, p2):
     return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+def newIconButton(parent, size, icon_path, on_click, color=wx.WHITE):
+    btn = wx.Button(parent, size=size)
+    btn.SetBackgroundColour(color)
+    btn.Bind(wx.EVT_BUTTON, on_click)
+    btn.SetBitmap(newScaledImgBitmap(icon_path, size))
+    return btn

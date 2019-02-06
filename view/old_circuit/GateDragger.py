@@ -28,5 +28,5 @@ class GateDragger:
         self.movedGateShadow.Hide()
         self.movedGateShadow.EndDrag()
         self.movedGateShadow = None
-        self.circuit.gatePlacer.exchangeSlotsIfPossibleOnSelected(mx, my)
+        self.circuit.gatePlacer.swapSlotsIfPossible(mx, my)
         self.circuit.shouldStimulate = False
