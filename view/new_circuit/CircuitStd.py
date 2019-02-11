@@ -3,106 +3,18 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from model.QuantumComputer import QuantumComputer
-from util.Utils import newScaledImgBitmap, newIconButton
+from util.Utils import newIconButton
 from view.new_circuit.GateDragger import GateDragger
+from view.new_circuit.GatePlacer import GatePlacer
+from view.new_circuit.MultiqbitGatePlacer import MultiqbitGatePlacer
+from view.new_circuit.SingleGateTile import SingleGateTile
 
-KET_0 = "../Images/Circuit/ket_0.png"
-KET_1 = "../Images/Circuit/ket_1.png"
+from view.new_circuit.constants import *
+from view.new_circuit.qbit_btn_menu.DeleteQbitButton import DeleteQbitButton
+from view.new_circuit.qbit_btn_menu.QbitButton import QbitButton
+from view.new_circuit.qbit_btn_menu.QbitMenu import QbitMenu
+from view.new_circuit.simulation_panel.SimulationPanel import BackActionPanel, NextActionPanel, FastForwardActionPanel
 
-GATE_SIZE = 32
-GATE_H_SPACE = 3
-MAX_ROWS = 15
-MAX_COLUMNS = 300
-
-class QbitMenu:
-
-    def __init__(self):
-        self.qbitButton = None
-        self.deleteButton = None
-        self.rowSizer = None
-
-    def setViews(self, qbitBtn, deleteBtn, rowSizer):
-        self.qbitButton = qbitBtn
-        self.deleteButton = deleteBtn
-        self.rowSizer = rowSizer
-        self.timer = wx.Timer(self.qbitButton)
-        qbitBtn.Bind(wx.EVT_TIMER, self.onMouseLeaveExpired, self.timer)
-
-    def onMouseHoverOnQbit(self):
-        self.deleteButton.Show()
-        self.rowSizer.Layout()
-
-    def onMouseLeaveQbit(self):
-        self.timer.StartOnce(100)
-
-    def onMouseLeaveExpired(self, ev):
-        rect = self.deleteButton.GetRect()
-        if not rect.Contains(self.qbitButton.GetParent().ScreenToClient(wx.GetMousePosition())):
-            self.deleteButton.Hide()
-            self.rowSizer.Layout()
-
-    def onMouseLeaveDelete(self):
-        self.deleteButton.Hide()
-        self.rowSizer.Layout()
-
-class QbitButton(wx.Button):
-    def __init__(self, parent,  index, qbitMenu, quantumComputer):
-        wx.Button.__init__(self, parent= parent, size=(GATE_SIZE, GATE_SIZE))
-        self.quantumComputer = quantumComputer
-        self.value = quantumComputer.qbitValueAt(index)
-        self.index = index
-        self.qbitMenu = qbitMenu
-        self.setValueView()
-        self.Bind(wx.EVT_BUTTON, self.onClick)
-        self.Bind(wx.EVT_ENTER_WINDOW, self.onMouseHover)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
-
-    def onMouseHover(self, ev):
-        self.qbitMenu.onMouseHoverOnQbit()
-
-    def onMouseLeave(self, ev):
-        self.qbitMenu.onMouseLeaveQbit()
-
-    def onClick(self, ev):
-        self.quantumComputer.swapQbitValueAt(self.index)
-        self.GetParent().resetView()
-
-    def setValueView(self):
-        self.SetBitmap(newScaledImgBitmap(KET_0 if self.value == 0 else KET_1, (GATE_SIZE, GATE_SIZE)))
-
-class DeleteQbitButton(wx.Button):
-
-    def __init__(self, parent, index, qbitMenu, quantumComputer):
-        wx.Button.__init__(self, parent, size=(GATE_SIZE, GATE_SIZE))
-        self.qbitMenu = qbitMenu
-        self.index = index
-        self.quantumComputer = quantumComputer
-        self.SetBitmap(newScaledImgBitmap("../Images/Circuit/delete.png", (GATE_SIZE, GATE_SIZE)))
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.onMouseLeave)
-        self.Bind(wx.EVT_BUTTON, self.onClick)
-        self.Hide()
-
-    def onMouseLeave(self, ev):
-        self.qbitMenu.onMouseLeaveDelete()
-
-    def onClick(self, ev):
-        self.quantumComputer.removeQbit(self.index)
-        self.GetParent().resetView()
-
-class SingleGateTile:
-    def __init__(self, i, j, gateName):
-        self.rect = wx.Rect2D(j * (GATE_SIZE + GATE_H_SPACE), i * GATE_SIZE, GATE_SIZE, GATE_SIZE)
-        self.gateName = gateName
-        self.ij = (i, j)
-        self.bmp = newScaledImgBitmap('../Images/Palette/{}.png'.format(self.gateName), (GATE_SIZE, GATE_SIZE))
-
-    def drawSelf(self, dc):
-        x, y = self.rect.GetLeft(), self.rect.GetTop()
-        dc.DrawRectangle(*self.rect.GetPosition(), *self.rect.GetSize())
-        dc.DrawBitmap(self.bmp, x, y)
-
-    def removeSelf(self, filledSlots):
-        filledSlots.__delitem__(self.ij)
 
 class CircuitPanel(wx.Panel):
 
@@ -113,8 +25,10 @@ class CircuitPanel(wx.Panel):
         self.quantumComputer = QuantumComputer(nqbits=nqubits)
         self.shouldStimulate = False
         self.filled_slots = {} # (i,j) => gateTile
-        self.gateDragger = GateDragger(self)
-        self.draggedGateTile = None
+        self.flattened_multigates = {}  # {(ctrl1, j1) -> (name_1, target_i_1), (ctrl2, j2) -> (name_2, target_i_2)...}
+        self.gateDragger = GateDragger(self, self.quantumComputer)
+        self.multiqbitPlacer = MultiqbitGatePlacer(self, self.quantumComputer)
+        self.gatePlacer = GatePlacer(self, gateMediator, self.quantumComputer)
         self.gateName = None
         self.showDeleteMsg = False
         self.gateMediator = gateMediator
@@ -132,22 +46,31 @@ class CircuitPanel(wx.Panel):
         self.Bind(wx.EVT_LEFT_DOWN, self.on_left_click)
         self.Bind(wx.EVT_MOTION, self.on_mouse_move)
         self.Bind(wx.EVT_LEFT_UP, self.on_endclick)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.on_doubleclick)
+        self.Bind(wx.EVT_RIGHT_UP, self.on_right_click)
 
-    def on_left_click(self,  event):
+    def on_right_click(self, ev):
+        self.multiqbitPlacer.cancel_drawing_control_line()
+
+    def on_doubleclick(self, event):
+        self.multiqbitPlacer.place_control_bit(*event.GetPosition(), self.filled_slots)
+
+    def on_left_click(self, event):
         m_x, m_y = event.GetPosition()
         if self.gateName is not None:
-            self.placeGate(m_x,m_y)
-        self.draggedGateTile = self.detectGateSelection(m_x, m_y)
-        if self.draggedGateTile is not None:
-            self.gateDragger.initDraggingGate(event, self.draggedGateTile)
+            self.gatePlacer.placeGate(m_x,m_y)
+        selectedGateTile = self.detectGateSelection(m_x, m_y)
+        if selectedGateTile is not None:
+            self.gateDragger.initDraggingGate(event, selectedGateTile)
+        self.multiqbitPlacer.place_target(*event.GetPosition())
         self.Refresh()
 
     def on_mouse_move(self, event):
-        self.gateDragger.dragGate(event, self.draggedGateTile)
+        self.gateDragger.dragGate(event)
+        self.multiqbitPlacer.update_control_line(event)
 
     def on_endclick(self, event):
         self.gateDragger.stopDraggingGate(*event.GetPosition())
-        self.Refresh()
 
     def detectGateSelection(self, m_x, m_y):
         i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
@@ -155,35 +78,15 @@ class CircuitPanel(wx.Panel):
             return self.filled_slots[(i,j)]
         return None
 
-    def swapSlotsIfPossible(self, m_x, m_y):
-        i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
-        if (i, j) in self.filled_slots: return
-        self.quantumComputer.removeGate(*self.draggedGateTile.ij)
-        if m_x >= self.getW() or m_x < 2 * GATE_SIZE or \
-             m_y >= self.getH(qbitAreaOnly=True) or m_y < 0:
-                self.draggedGateTile = None
-                self.resetView()
-                return
-        self.quantumComputer.addGate(i, j, self.draggedGateTile.gateName)
-        self.draggedGateTile = None
-        self.resetView()
-
-    def placeGate(self, m_x, m_y):
-        if m_x < self.getW() and m_x > 2 * GATE_SIZE:
-            if m_y < self.getH(qbitAreaOnly=True) and m_y > 0:
-                i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
-                if not (i,j) in self.filled_slots:
-                    self.quantumComputer.addGate(i,j, self.gateName)
-        self.gateMediator.gateUnselected()
-        self.resetView()
-
     def resetView(self):
         self.Freeze()
         self.DestroyChildren()
         self.rootSizer.Clear()
         self.rootSizer.Add(self.new_QbitsReg())
         self.rootSizer.Layout()
+        self.multiqbitPlacer.cancel_drawing_control_line()
         self.filled_slots = self.gridToGateTiles()
+        self.flattened_multigates = self.quantumComputer.flattenedMultiGates()
         self.Refresh()
         self.Thaw()
 
@@ -241,20 +144,26 @@ class CircuitPanel(wx.Panel):
         dc.Clear()
         self.drawCords(dc)
         self.drawStimula(dc)
+        self.multiqbitPlacer.draw_control_line(dc)
+        self.multiqbitPlacer.draw_multiqubit_gates(dc, self.flattened_multigates)
         self.drawGates(dc)
         if self.gateDragger.dragging:
             self.drawDeleteMsg(dc)
-        del dc # so that it is deallocated and we can create a new configuration below
+        del dc  # so that it is deallocated and we can create a new configuration below
         self.drawSimulationMark()
+
+    def ij_to_xy(self, i, j):
+        x = GATE_SIZE * j + GATE_SIZE/2 + j * GATE_H_SPACE
+        y = GATE_SIZE * i + GATE_SIZE/2
+        return x,y
 
     def drawStimula(self, dc):
         if not self.shouldStimulate: return
         dc.SetPen(wx.Pen(wx.BLUE))
         for i in range(self.quantumComputer.register.nqubits):
             for j in range(2, MAX_COLUMNS + 2):
-                if not (i,j) in self.filled_slots:
-                    x = GATE_SIZE * j + GATE_SIZE/2 + j * GATE_H_SPACE
-                    y = GATE_SIZE * i + GATE_SIZE/2
+                if self.quantumComputer.can_add_gate_at(i, j):
+                    x,y = self.ij_to_xy(i, j)
                     dc.DrawCircle(x, y, 3)
 
     def drawCords(self, dc):
@@ -263,6 +172,7 @@ class CircuitPanel(wx.Panel):
             dc.DrawLine(2*GATE_SIZE, middle, self.getW(), middle)
 
     def drawGates(self, dc):
+        dc.SetBrush(wx.Brush(wx.WHITE))
         for gateTile in self.filled_slots.values():
             gateTile.drawSelf(dc)
 
@@ -283,63 +193,6 @@ class CircuitPanel(wx.Panel):
         self.gateName = gateName
         self.shouldStimulate = shouldStimulate
         self.Refresh()
-
-class SimulActionPanel(wx.Panel):
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        panel_width = 150
-        btn = wx.Button(self, size = (panel_width, 25))
-        btn.SetBitmap(newScaledImgBitmap("../Images/Circuit/{}.png".format(self.bmpFile()), (GATE_SIZE, GATE_SIZE)))
-        btn.Bind(wx.EVT_BUTTON, self.onclick)
-
-        sizer.Add(btn, 0, wx.CENTER)
-        sizer.Add(wx.TextCtrl(self, value=self.shortDesc(), style=wx.TE_READONLY | wx.TE_CENTER | wx.TE_MULTILINE | wx.NO_BORDER | wx.TE_NO_VSCROLL, size=(panel_width, 50)), 0, wx.CENTER)
-        self.SetSizer(sizer)
-
-    def shortDesc(self):
-        raise Exception("Not implemented")
-
-    def onclick(self, ev):
-        self.controlSimulation()
-
-    def controlSimulation(self):
-        raise Exception("control simulation not implemented")
-
-    def bmpFile(self):
-        raise Exception("bmp path not implemented")
-
-
-
-class NextActionPanel(SimulActionPanel):
-    def bmpFile(self):
-        return "next"
-
-    def shortDesc(self):
-        return "Go to next Step"
-
-    def controlSimulation(self):
-        print("nb control simul")
-
-class BackActionPanel(SimulActionPanel):
-    def bmpFile(self):
-        return "back"
-
-    def shortDesc(self):
-        return "Break simulation"
-
-    def controlSimulation(self):
-        print("back control simul")
-
-class FastForwardActionPanel(SimulActionPanel):
-    def bmpFile(self):
-        return "fast_forward"
-
-    def shortDesc(self):
-        return "Fast forward to the end"
-
-    def controlSimulation(self):
-        print("ff control simul")
 
 class CircuitStd(wx.Panel):
 

@@ -1,6 +1,9 @@
 from math import sqrt
 
+import functools
 import wx
+from functools import reduce
+
 
 def AddToolButtonBmpIS(frame, toolbar, path, hint, triggermeth, toggleBmp ='', type=wx.BITMAP_TYPE_PNG):
     if toggleBmp:
@@ -48,3 +51,14 @@ def newIconButton(parent, size, icon_path, on_click, color=wx.WHITE):
     btn.Bind(wx.EVT_BUTTON, on_click)
     btn.SetBitmap(newScaledImgBitmap(icon_path, size))
     return btn
+
+def flatten_list(listOfLists, fun = lambda x: x):
+    return reduce(list.__add__, map(fun, listOfLists))
+
+def update_dict(a, b):
+    dest = dict(a)
+    dest.update(b)
+    return dest
+
+def flatten_dicts(list_of_dicts):
+    return dict(functools.reduce(lambda acc, d: update_dict(acc, d), list_of_dicts, {}))
