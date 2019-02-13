@@ -1,5 +1,6 @@
 import wx
 import wx.lib.buttons
+from model.constants import *
 
 [wxID_BOAFRAME, wxID_BOAFRAMEPALETTE, wxID_BOAFRAMETOOLBAR,
 ] = [wx.NewId() for _init_ctrls in range(3)]
@@ -59,9 +60,9 @@ class UpperMenu(wx.MDIChildFrame):
     def initUpperMenu(self):
         palettePage = PanelPalettePage(self.palette, "Gates",
               '../Images/Palette/', self, self.gateMediator)
-        paletteLists = {'New': ["X", "Y", "Z", "T", "H"]}
+        paletteLists = {'Gates': [X, Y, Z, ROTATION_X, ROTATION_Y, ROTATION_Z, H, SQRT_X, U, MEASURE]}
 
-        for modelName in paletteLists['New']:
+        for modelName in paletteLists['Gates']:
             palettePage.addGateButton(modelName, wx.lib.buttons.GenBitmapButton)
 
         self.palettePages.append(palettePage)

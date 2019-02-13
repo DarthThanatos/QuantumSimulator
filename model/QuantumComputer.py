@@ -1,4 +1,5 @@
 from model.constants import X
+from model.gates.GateCreator import GateCreator
 from util.Utils import flatten_dicts
 
 class Register:
@@ -37,8 +38,9 @@ class QuantumComputer:
 
     def __init__(self, nqbits):
         self.register = Register(nqbits=nqbits)
-        self.grid = {}  # dict of dicts of single gates, {i: {j : gateName}}
+        self.grid = {}  # dict of dicts of single gates, {i: {j : gate}}
         self.multiGates = {}
+        self.__gate_creator = GateCreator()
         # ^ dict of dicts { j: { (ctrl1, ctrl2 ...) -> (name, target) } }, where name is a simple target gate name,
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
 
@@ -61,10 +63,12 @@ class QuantumComputer:
                     return True
         return False
 
-    def addGate(self, i, j, name):
+    def add_gate(self, i, j, name):
         if not self.grid.__contains__(i):
             self.grid[i] = {}
-        self.grid[i][j] = name
+        gate = self.__gate_creator.createGate(name, i)
+        self.grid[i][j] = gate
+        return gate
 
     def removeGate(self, i, j):
         self.grid[i].__delitem__(j)
@@ -128,7 +132,7 @@ class QuantumComputer:
 
     def flattenedGrid(self):
         # returns a one-dimensional copy of the grid instead of the original two dimensional structure
-        list_of_dicts = [{(y[0], j): name for (j, name) in y[1].items()} for y in self.grid.items()]
+        list_of_dicts = [{(y[0], j): gate.get_name() for (j, gate) in y[1].items()} for y in self.grid.items()]
         return flatten_dicts(list_of_dicts)
 
     def flattenedMultiGates(self):
@@ -187,7 +191,7 @@ class QuantumComputer:
         return True
 
     def put_ctrl(self, i_ctrl, i_target, j):
-        target_name = self.grid[i_target][j]
+        target_name = self.grid[i_target][j].get_name()
         if not self.multiGates.__contains__(j):
             self.multiGates[j] = {}
         entry = self.__get_multigate_entry(i_target, j)

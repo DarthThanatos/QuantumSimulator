@@ -67,6 +67,6 @@ class GateDragger:
                 self.draggedGateTile = None
                 self.circuit.resetView()
                 return
-        self.quantumComputer.addGate(i, j, self.draggedGateTile.gateName)
+        self.quantumComputer.add_gate(i, j, self.draggedGateTile.gateName)
         self.draggedGateTile = None
         self.circuit.resetView()

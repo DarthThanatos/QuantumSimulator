@@ -1,6 +1,8 @@
 from math import sqrt
 
 import functools
+from win32api import GetSystemMetrics
+
 import wx
 from functools import reduce
 
@@ -62,3 +64,10 @@ def update_dict(a, b):
 
 def flatten_dicts(list_of_dicts):
     return dict(functools.reduce(lambda acc, d: update_dict(acc, d), list_of_dicts, {}))
+
+def get_screen_w_h():
+    return GetSystemMetrics(0), GetSystemMetrics(1)
+
+def get_screen_middle_point():
+    w,h = get_screen_w_h()
+    return w/2, h/2
