@@ -72,3 +72,6 @@ class Gate:
 
     def __str__(self):
         return str(self._parameters)
+
+    def transform_vector(self, vector):
+        raise Exception("no transformation")

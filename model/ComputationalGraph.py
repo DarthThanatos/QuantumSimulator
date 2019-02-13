@@ -91,9 +91,9 @@ def rotationGate(coin_angle):
 
 def denseCoding():
     register = tensor([ket1(), ket0(), ket0(), ket0()])
-    entanglement =  tensor([qeye(2)] * 2 + [ctrlXGate()]) * tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)])
+    entanglement = tensor([qeye(2)] * 2 + [ctrlXGate()]) * tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)])
     message_closing = (tensor([ctrlZGate()] + [qeye(2)] * 2).permute([0,2,1,3])) * tensor([qeye(2), ctrlXGate(), qeye(2)])
-    bell =  tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
+    bell = tensor([qeye(2)] * 2 + [hadamard_transform()] + [qeye(2)]) * tensor([qeye(2)] * 2 + [ctrlXGate()])
     print(bell * message_closing * entanglement * register)
 
 def measure(qubitsN, bitN, register):

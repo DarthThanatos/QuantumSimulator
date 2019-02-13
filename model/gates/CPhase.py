@@ -22,7 +22,6 @@ class CPhaseKick(Gate):
 
     def __is_int(self, kwargs):
         k = kwargs[self._K]
-        print("type of k: ", k, "is",type(eval(k)))
         return type(eval(k)) == int
 
     def is_gate_correct(self, kwargs):

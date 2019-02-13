@@ -2,6 +2,7 @@ from model.constants import *
 from model.gates.CPhaseKick import CPhaseKickGate
 from model.gates.CPhaseKickInv import CPhaseKickInvGate
 from model.gates.Hadamard import HadamardGate
+from model.gates.Measurement import MeasurementGate
 from model.gates.PhaseKick import PhaseKickGate
 from model.gates.PhaseScale import PhaseScaleGate
 from model.gates.RotationX import RotationXGate
@@ -29,7 +30,8 @@ class GateCreator:
         PHASE_KICK: PhaseKickGate,
         PHASE_SCALE: PhaseScaleGate,
         C_PHASE_KICK: CPhaseKickGate,
-        INV_C_PHASE_KICK: CPhaseKickInvGate
+        INV_C_PHASE_KICK: CPhaseKickInvGate,
+        MEASURE: MeasurementGate
     }
 
     def createGate(self, name, i):
