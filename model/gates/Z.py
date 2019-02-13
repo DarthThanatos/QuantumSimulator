@@ -3,10 +3,10 @@ from model.gates.Gate import Gate
 from model.constants import *
 
 
-class YGate(Gate):
+class ZGate(Gate):
 
     def qutip_object(self):
-        return qutip.sigmay()
+        return qutip.sigmaz()
 
     def get_name(self):
-        return Y
+        return Z

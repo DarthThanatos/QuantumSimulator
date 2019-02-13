@@ -60,7 +60,7 @@ class UpperMenu(wx.MDIChildFrame):
     def initUpperMenu(self):
         palettePage = PanelPalettePage(self.palette, "Gates",
               '../Images/Palette/', self, self.gateMediator)
-        paletteLists = {'Gates': [X, Y, Z, ROTATION_X, ROTATION_Y, ROTATION_Z, H, SQRT_X, U, MEASURE]}
+        paletteLists = {'Gates': [X, Y, Z, ROTATION_X, ROTATION_Y, ROTATION_Z, H, SQRT_X, PHASE_KICK, PHASE_SCALE, C_PHASE_KICK, INV_C_PHASE_KICK, U, MEASURE]}
 
         for modelName in paletteLists['Gates']:
             palettePage.addGateButton(modelName, wx.lib.buttons.GenBitmapButton)

@@ -16,9 +16,6 @@ class Gate:
     def get_parameters_names(self):
         return []
 
-    def get_parameters_defaults(self):
-        return {}
-
     def get_parameter_default(self, parameter_name):
         raise Exception("no parameter default")
 

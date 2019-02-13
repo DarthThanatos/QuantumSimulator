@@ -76,15 +76,18 @@ class ParameterDialog(wx.Dialog):
     def getHeight(self, gate):
         # the dialog must have the height that fits len(params) widgets (i.e. all parameter views),
         # plus it must contain an error log area for each such widget, plus a log area for the gate itself,
-        # plus buttons area, plus spacers
-        spacers = 50
+        # plus buttons area, plus spacers, plus header
+        spacers = 70
         single_view_height = 20
-        return (len(gate.get_parameters_names()) + 1) * 2 * single_view_height + spacers
+        header_size = 30
+        return (len(gate.get_parameters_names()) + 1) * 2 * single_view_height + header_size + spacers
 
     def __new_panel(self):
         panel = wx.Panel(self)
         panel.Bind(EVT_PARAM_CHANGED, self.__on_parameter_input_changed)
         sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(20)
+        sizer.Add(self.__new_header(panel), 0, wx.CENTER)
         sizer.AddSpacer(20)
         sizer.Add(self.__new_parameters_views(panel), 0, wx.CENTER)
         sizer.Add(self.__new_gate_error_log(panel), 0, wx.CENTER)
@@ -107,6 +110,13 @@ class ParameterDialog(wx.Dialog):
             else ""
         self.__gate_error_log.SetLabelText(error_msg)
         self.__root_sizer.Layout()
+
+    def __new_header(self, panel):
+        header = wx.StaticText(panel, label="creating a new {} gate".format(self.__gate.get_name()))
+        header.SetForegroundColour(wx.BLUE)
+        font = wx.Font(18, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.NORMAL)
+        header.SetFont(font)
+        return header
 
     def __new_gate_error_log(self, panel):
         self.__gate_error_log = self.__new_error_log(panel)
@@ -162,6 +172,7 @@ class ParameterDialog(wx.Dialog):
     def __on_ok(self, ev):
         for name, value in self.__get_gate_kwargs().items():
             self.__gate.set_parameter_value(name, value)
+        print(self.__gate.qutip_object())
         self.EndModal(200)
 
     def __on_cancel(self, ev):

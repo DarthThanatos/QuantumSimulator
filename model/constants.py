@@ -11,3 +11,7 @@ ROTATION_Z = "r_z"
 H = "H"
 SQRT_X = "sqrt_x"
 MEASURE = "measure"
+PHASE_SCALE = "phase_scale"
+PHASE_KICK = "phase_kick"
+C_PHASE_KICK = 'cphase'
+INV_C_PHASE_KICK = "inv_cphase"

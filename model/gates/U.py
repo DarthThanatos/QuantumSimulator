@@ -45,3 +45,7 @@ class UGate(Gate):
         if error_msg == "":
             return "Gate is not unitary" if not self.__is_unitary(kwargs) else ""
         return error_msg
+
+    def qutip_object(self):
+        e_0, e_1, e_2, e_3 = list(map(lambda name: self._parameters[name], self.get_parameters_names()))
+        return Qobj([[e_0, e_1], [e_2, e_3]])

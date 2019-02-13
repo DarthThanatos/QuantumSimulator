@@ -3,13 +3,13 @@ from model.constants import *
 from model.gates.Rotation import Rotation
 
 
-class RotationXGate(Rotation):
+class RotationZGate(Rotation):
 
     def get_name(self):
-        return ROTATION_X
+        return ROTATION_Z
 
     def qutip_object(self):
-        return qutip.rx(phi=self._parameters[self._get_parameter_name()])
+        return qutip.rz(phi=self._parameters[self._get_parameter_name()])
 
     def _get_axis(self):
-        return X
+        return Z
