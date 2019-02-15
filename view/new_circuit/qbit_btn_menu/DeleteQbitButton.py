@@ -18,5 +18,5 @@ class DeleteQbitButton(wx.Button):
         self.qbitMenu.onMouseLeaveDelete()
 
     def onClick(self, ev):
-        self.quantumComputer.removeQbit(self.index)
+        self.quantumComputer.remove_qbit(self.index)
         self.GetParent().resetView()

@@ -6,7 +6,7 @@ class QbitButton(wx.Button):
     def __init__(self, parent,  index, qbitMenu, quantumComputer):
         wx.Button.__init__(self, parent= parent, size=(GATE_SIZE, GATE_SIZE))
         self.quantumComputer = quantumComputer
-        self.value = quantumComputer.qbitValueAt(index)
+        self.value = quantumComputer.qbit_value_at(index)
         self.index = index
         self.qbitMenu = qbitMenu
         self.setValueView()
@@ -21,7 +21,7 @@ class QbitButton(wx.Button):
         self.qbitMenu.onMouseLeaveQbit()
 
     def onClick(self, ev):
-        self.quantumComputer.swapQbitValueAt(self.index)
+        self.quantumComputer.swap_qbit_value_at(self.index)
         self.GetParent().resetView()
 
     def setValueView(self):

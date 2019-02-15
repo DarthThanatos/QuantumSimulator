@@ -1,5 +1,6 @@
 import wx
 
+from model.QuantumComputer import QuantumComputer
 from view.GateMediator import GateMediator
 from view.LoadingScreen import LoadingScreen
 from view.Inspector import Inspector
@@ -35,6 +36,7 @@ class SimulatorApp(wx.App):
         wx.ToolTip.Enable(True)
         frame = wx.MDIParentFrame(None, title="Hello Simulator", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
         frame.Maximize(True)
+        quantum_computer = QuantumComputer(nqbits=3)
         self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)
         self.Bind(wx.EVT_RIGHT_UP, self.OnRMClicked)
         self.frame = frame
@@ -54,7 +56,7 @@ class SimulatorApp(wx.App):
         inspector = Inspector(frame, self.gateMediator)
         inspector.Show()
 
-        editor = Editor(frame, self.gateMediator)
+        editor = Editor(frame, self.gateMediator, quantum_computer)
         editor.Show()
 
         self.main = UpperMenu(frame, self.gateMediator)

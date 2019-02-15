@@ -173,7 +173,7 @@ class Editor(wx.MDIChildFrame):
 
 
 
-    def __init__(self, parent, gateMediator):
+    def __init__(self, parent, gateMediator, quantum_computer):
 
         wx.MDIChildFrame.__init__(self, id=wxID_EDITORFRAME, name='', parent=parent,
               pos=wx.Point(68, 72), size=wx.Size(810, 515),
@@ -219,8 +219,8 @@ class Editor(wx.MDIChildFrame):
         self.numFixedPages = 0
 
         # Explorer
-        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator, Page=CircuitStd)
-        self.notepad = self.addExplorerPage('Explorer', gateMediator=gateMediator)
+        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator=gateMediator, Page=CircuitStd, quantum_computer=quantum_computer)
+        self.notepad = self.addExplorerPage('Explorer', gateMediator=gateMediator, Page=Notepad, quantum_computer=quantum_computer)
         # self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
 
         self.winDimsMenu = wx.Menu()
@@ -314,8 +314,8 @@ class Editor(wx.MDIChildFrame):
     def OnPythonHelpToolClick(self, ev):
         pass
 
-    def addExplorerPage(self, name, gateMediator, Page=Notepad):
-        explorerPage = Page(self.tabs, gateMediator)
+    def addExplorerPage(self, name, gateMediator, Page, quantum_computer):
+        explorerPage = Page(self.tabs, gateMediator, quantum_computer)
         self.tabs.AddPage(explorerPage, name, imageId=wx.NewId())
         self.numFixedPages += 1
         return explorerPage

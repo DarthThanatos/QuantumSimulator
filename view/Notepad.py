@@ -100,9 +100,10 @@ class MyTree(wx.TreeCtrl):
         self.notebook.newTabIfNotExists(fileToOpen)
 
 class Notepad(wx.SplitterWindow):
-    def __init__(self, parent, gateMediator):
+    def __init__(self, parent, gateMediator, quantum_computer):
         wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.gateMediator = gateMediator
+        self.__quantum_computer = quantum_computer
         self.workspacePath = self.getWorkspacePath()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.newNotebook(), self.newFileTree())

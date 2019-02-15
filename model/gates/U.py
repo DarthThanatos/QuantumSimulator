@@ -6,8 +6,8 @@ from model.constants import *
 
 class UGate(Gate):
 
-    def __init__(self, qbit):
-        super().__init__(qbit)
+    def __init__(self, qbit, parameters=None):
+        super().__init__(qbit, parameters)
         self.__types_dict = self.__get_types_dict()
         self.__defaults_dict = self.get_parameters_defaults()
 

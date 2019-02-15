@@ -34,5 +34,5 @@ class GateCreator:
         MEASURE: MeasurementGate
     }
 
-    def createGate(self, name, i):
-        return self.__name_to_class[name](i)
+    def createGate(self, name, i, parameters=None):
+        return self.__name_to_class[name](i, parameters)

@@ -61,12 +61,12 @@ class GateDragger:
         i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
         if not self.quantumComputer.can_add_gate_at(i, j):
             return
-        self.quantumComputer.removeGate(*self.draggedGateTile.ij)
+        removed_gate = self.quantumComputer.remove_gate(*self.draggedGateTile.ij)
         if m_x >= self.circuit.getW() or m_x < 2 * GATE_SIZE or \
              m_y >= self.circuit.getH(qbitAreaOnly=True) or m_y < 0:
                 self.draggedGateTile = None
                 self.circuit.resetView()
                 return
-        self.quantumComputer.add_gate(i, j, self.draggedGateTile.gateName)
+        print(self.quantumComputer.recreate_gate_at(i, j, removed_gate))
         self.draggedGateTile = None
         self.circuit.resetView()

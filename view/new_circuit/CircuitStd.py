@@ -2,7 +2,6 @@ import wx
 
 from wx.lib.scrolledpanel import ScrolledPanel
 
-from model.QuantumComputer import QuantumComputer
 from util.Utils import newIconButton
 from view.new_circuit.GateDragger import GateDragger
 from view.new_circuit.GatePlacer import GatePlacer
@@ -13,25 +12,27 @@ from view.new_circuit.constants import *
 from view.new_circuit.qbit_btn_menu.DeleteQbitButton import DeleteQbitButton
 from view.new_circuit.qbit_btn_menu.QbitButton import QbitButton
 from view.new_circuit.qbit_btn_menu.QbitMenu import QbitMenu
-from view.new_circuit.simulation_panel.SimulationPanel import BackActionPanel, NextActionPanel, FastForwardActionPanel
+from view.new_circuit.simulation_panel.SimulationPanel import FastBackActionPanel, NextActionPanel, \
+    FastForwardActionPanel, BackActionPanel
 
 
 class CircuitPanel(wx.Panel):
 
-    def __init__(self, parent, nqubits, gateMediator):
+    def __init__(self, parent, quantum_computer, gate_mediator):
         size = (self.getW(), self.getH())
         wx.Panel.__init__(self, parent, size=size)
 
-        self.quantumComputer = QuantumComputer(nqbits=nqubits)
+        self.__quantum_computer = quantum_computer
         self.shouldStimulate = False
         self.filled_slots = {} # (i,j) => gateTile
         self.flattened_multigates = {}  # {(ctrl1, j1) -> (name_1, target_i_1), (ctrl2, j2) -> (name_2, target_i_2)...}
-        self.gateDragger = GateDragger(self, self.quantumComputer)
-        self.multiqbitPlacer = MultiqbitGatePlacer(self, self.quantumComputer)
-        self.gatePlacer = GatePlacer(self, gateMediator, self.quantumComputer)
+        self.gateDragger = GateDragger(self, self.__quantum_computer)
+        self.multiqbitPlacer = MultiqbitGatePlacer(self, self.__quantum_computer)
+        self.gatePlacer = GatePlacer(self, gate_mediator, self.__quantum_computer)
         self.gateName = None
         self.showDeleteMsg = False
-        self.gateMediator = gateMediator
+        self.gateMediator = gate_mediator
+        self.__qbit_register_views = []
 
         self.rootSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.rootSizer.Add(self.new_QbitsReg())
@@ -49,13 +50,20 @@ class CircuitPanel(wx.Panel):
         self.Bind(wx.EVT_LEFT_DCLICK, self.on_doubleclick)
         self.Bind(wx.EVT_RIGHT_UP, self.on_right_click)
 
-    def on_right_click(self, ev):
+    def __mouse_inside_stimulation_area(self, event):
+        m_x, m_y = event.GetPosition()
+        return wx.Rect2D(0, 0, *self.__get_simulated_area_size()).Contains((m_x, m_y))
+
+    def on_right_click(self, event):
+        if self.__mouse_inside_stimulation_area(event): return
         self.multiqbitPlacer.cancel_drawing_control_line()
 
     def on_doubleclick(self, event):
+        if self.__mouse_inside_stimulation_area(event): return
         self.multiqbitPlacer.place_control_bit(*event.GetPosition(), self.filled_slots)
 
     def on_left_click(self, event):
+        if self.__mouse_inside_stimulation_area(event): return
         m_x, m_y = event.GetPosition()
         if self.gateName is not None:
             self.gatePlacer.placeGate(m_x,m_y)
@@ -66,10 +74,12 @@ class CircuitPanel(wx.Panel):
         self.Refresh()
 
     def on_mouse_move(self, event):
+        if self.__mouse_inside_stimulation_area(event): return
         self.gateDragger.dragGate(event)
         self.multiqbitPlacer.update_control_line(event)
 
     def on_endclick(self, event):
+        if self.__mouse_inside_stimulation_area(event): return
         self.gateDragger.stopDraggingGate(*event.GetPosition())
 
     def detectGateSelection(self, m_x, m_y):
@@ -84,19 +94,21 @@ class CircuitPanel(wx.Panel):
         self.rootSizer.Clear()
         self.rootSizer.Add(self.new_QbitsReg())
         self.rootSizer.Layout()
+        self.__enable_qubits_register_view()
         self.multiqbitPlacer.cancel_drawing_control_line()
         self.filled_slots = self.gridToGateTiles()
-        self.flattened_multigates = self.quantumComputer.flattenedMultiGates()
+        self.flattened_multigates = self.__quantum_computer.flattened_multi_gates()
         self.Refresh()
         self.Thaw()
 
     def gridToGateTiles(self):
-        flattenedGrid = self.quantumComputer.flattenedGrid()
-        return {(i,j): SingleGateTile(i, j, flattenedGrid[(i,j)]) for (i,j) in flattenedGrid}
+        flattened_grid = self.__quantum_computer.flattened_grid()
+        return {(i,j): SingleGateTile(i, j, flattened_grid[(i,j)]) for (i,j) in flattened_grid}
 
     def new_QbitsReg(self):
         qbitRegSizer = wx.BoxSizer(wx.VERTICAL)
-        for i in range(self.quantumComputer.register.nqubits):
+        self.__qbit_register_views = []
+        for i in range(self.__quantum_computer.circuit_qubits_number()):
             qbitRegSizer.Add(self.newQbitRow(i))
         qbitRegSizer.Add(self.newAddQbitRow())
         return qbitRegSizer
@@ -104,18 +116,21 @@ class CircuitPanel(wx.Panel):
     def newAddQbitRow(self):
         addbtnsizer = wx.BoxSizer(wx.HORIZONTAL)
         addbtnsizer.AddSpacer(GATE_SIZE)
-        addbtnsizer.Add(self.newAddQbitBtn())
+        add_btn = self.newAddQbitBtn()
+        addbtnsizer.Add(add_btn)
+        self.__qbit_register_views.append(add_btn)
         return addbtnsizer
 
     def newQbitRow(self, i):
         qbitHorizontalBox = wx.GridSizer(3)
         qbitHorizontalBox.Add(self.newQbitLabel(i), 0, wx.CENTER)
         qbitMenu = QbitMenu()
-        delBtn = DeleteQbitButton(self, i, qbitMenu, self.quantumComputer)
-        qbtn = QbitButton(self, i, qbitMenu, self.quantumComputer)
+        delBtn = DeleteQbitButton(self, i, qbitMenu, self.__quantum_computer)
+        qbtn = QbitButton(self, i, qbitMenu, self.__quantum_computer)
         qbitMenu.setViews(qbtn, delBtn, qbitHorizontalBox)
         qbitHorizontalBox.Add(qbtn)
         qbitHorizontalBox.Add(delBtn)
+        self.__qbit_register_views.append(qbtn)
         return qbitHorizontalBox
 
     def newQbitLabel(self, i):
@@ -130,14 +145,14 @@ class CircuitPanel(wx.Panel):
         )
 
     def onAddQbit(self, ev):
-        self.quantumComputer.addQbit()
+        self.__quantum_computer.add_qbit()
         self.resetView()
 
     def getW(self):
         return (MAX_COLUMNS + 2) * GATE_SIZE + MAX_COLUMNS * GATE_H_SPACE
 
     def getH(self, qbitAreaOnly = False):
-        return MAX_ROWS * GATE_SIZE if not qbitAreaOnly else self.quantumComputer.register.nqubits * GATE_SIZE
+        return MAX_ROWS * GATE_SIZE if not qbitAreaOnly else self.__quantum_computer.circuit_qubits_number() * GATE_SIZE
 
     def on_paint(self, ev):
         dc = wx.AutoBufferedPaintDC(self)
@@ -160,14 +175,14 @@ class CircuitPanel(wx.Panel):
     def drawStimula(self, dc):
         if not self.shouldStimulate: return
         dc.SetPen(wx.Pen(wx.BLUE))
-        for i in range(self.quantumComputer.register.nqubits):
+        for i in range(self.__quantum_computer.circuit_qubits_number()):
             for j in range(2, MAX_COLUMNS + 2):
-                if self.quantumComputer.can_add_gate_at(i, j):
+                if self.__quantum_computer.can_add_gate_at(i, j):
                     x,y = self.ij_to_xy(i, j)
                     dc.DrawCircle(x, y, 3)
 
     def drawCords(self, dc):
-        for i in range(self.quantumComputer.register.nqubits):
+        for i in range(self.__quantum_computer.circuit_qubits_number()):
             middle = GATE_SIZE * i + GATE_SIZE/2
             dc.DrawLine(2*GATE_SIZE, middle, self.getW(), middle)
 
@@ -177,10 +192,19 @@ class CircuitPanel(wx.Panel):
             gateTile.drawSelf(dc)
 
     def drawSimulationMark(self):
+        width, height = self.__get_simulated_area_size()
         dc = wx.GCDC(wx.PaintDC(self))
         dc.SetBrush(wx.Brush(wx.Colour(255, 255, 255, 200)))
         dc.SetPen(wx.Pen(wx.WHITE))
-        dc.DrawRectangle(0, 0, 200, 200)
+        dc.DrawRectangle(0, 0, width, height)
+        dc.SetPen(wx.Pen(wx.BLUE))
+        dc.DrawLine(width, 0, width, height)
+
+    def __get_simulated_area_size(self):
+        step = self.__quantum_computer.simulation_step()
+        width = (GATE_SIZE + GATE_H_SPACE) * (step+1)
+        height = GATE_SIZE * (self.__quantum_computer.circuit_qubits_number())
+        return width, height
 
     def drawDeleteMsg(self, dc):
         if self.gateDragger.movedDist < self.gateDragger.DELETE_PROMPT_TRESHOLD: return
@@ -194,36 +218,73 @@ class CircuitPanel(wx.Panel):
         self.shouldStimulate = shouldStimulate
         self.Refresh()
 
+    def __enable_qubits_register_view(self):
+        enable = self.__quantum_computer.simulation_step() == -1
+        for view in self.__qbit_register_views:
+            view.Enable(enable)
+
+
 class CircuitStd(wx.Panel):
 
-    def __init__(self, parent, gateMediator):
+    def __init__(self, parent, gateMediator, quantum_computer):
         wx.Panel.__init__(self, parent)
         self.gateMediator = gateMediator
+        self.__quantum_computer = quantum_computer
+        self.__circuit_panel = None
+        self.__fast_forward = None
+        self.__fast_back = None
+        self.__back = None
+        self.__next = None
         self.shouldStimulate = False
         rootSizer = wx.BoxSizer(wx.VERTICAL)
         rootSizer.AddSpacer(30)
         rootSizer.Add(self.newSimulationActionPanels(), 0, wx.CENTER)
         rootSizer.AddSpacer(30)
         rootSizer.Add(self.newCircuitScroll())
+        self.__pass_circuit()
         self.SetSizer(rootSizer)
 
     def newCircuitScroll(self):
         circuitScroll = ScrolledPanel(self, size=(1500, 700))
         vbox = wx.BoxSizer(wx.VERTICAL)
-        self.circuitPanel = CircuitPanel(circuitScroll, 5, self.gateMediator)
-        vbox.Add(self.circuitPanel)
+        self.__circuit_panel = CircuitPanel(circuitScroll, self.__quantum_computer, self.gateMediator)
+        vbox.Add(self.__circuit_panel)
         circuitScroll.SetSizer(vbox)
         circuitScroll.SetupScrolling()
         return circuitScroll
 
     def newSimulationActionPanels(self):
         simulSizer = wx.BoxSizer(wx.HORIZONTAL)
-        simulSizer.Add(BackActionPanel(self))
+        simulSizer.Add(self.__new_fast_back_btn())
         simulSizer.AddSpacer(20)
-        simulSizer.Add(NextActionPanel(self))
+        simulSizer.Add(self.__new_back_btn())
         simulSizer.AddSpacer(20)
-        simulSizer.Add(FastForwardActionPanel(self))
+        simulSizer.Add(self.__new_next_btn())
+        simulSizer.AddSpacer(20)
+        simulSizer.Add(self.__new_fast_forward_btn())
         return simulSizer
 
+    def __new_fast_forward_btn(self):
+        self.__fast_forward = FastForwardActionPanel(self, self.__quantum_computer)
+        return self.__fast_forward
+
+    def __new_fast_back_btn(self):
+        self.__fast_back = FastBackActionPanel(self, self.__quantum_computer)
+        return self.__fast_back
+
+    def __new_next_btn(self):
+        self.__next = NextActionPanel(self, self.__quantum_computer)
+        return self.__next
+
+    def __new_back_btn(self):
+        self.__back = BackActionPanel(self, self.__quantum_computer)
+        return self.__back
+
+    def __pass_circuit(self):
+        self.__back.set_circuit(self.__circuit_panel)
+        self.__next.set_circuit(self.__circuit_panel)
+        self.__fast_back.set_circuit(self.__circuit_panel)
+        self.__fast_forward.set_circuit(self.__circuit_panel)
+
     def stimula(self, shouldStimulate, gateName=None):
-        self.circuitPanel.stimula(shouldStimulate, gateName)
+        self.__circuit_panel.stimula(shouldStimulate, gateName)

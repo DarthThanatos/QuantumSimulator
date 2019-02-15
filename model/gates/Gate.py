@@ -6,9 +6,18 @@ from util.Utils import flatten_dicts
 
 class Gate:
 
-    def __init__(self, qbit):
-        self._parameters = {}
+    def __init__(self, qbit, parameters = None):
+        self._parameters = parameters if parameters is not None else {}
         self._qbit = qbit
+
+    def set_target(self, qbit):
+        self._qbit = qbit
+
+    def parameters(self):
+        return dict(self._parameters)
+
+    def target(self):
+        return self._qbit
 
     def qutip_object(self):
         raise Exception("No qutip object")
@@ -71,7 +80,7 @@ class Gate:
         self._parameters[name] = type_convertion(eval(value))
 
     def __str__(self):
-        return str(self._parameters)
+        return str(self._parameters) + " target qubit: " + str(self._qbit)
 
     def transform_vector(self, vector):
         raise Exception("no transformation")

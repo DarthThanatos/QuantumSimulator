@@ -176,7 +176,7 @@ class ParameterDialog(wx.Dialog):
         self.EndModal(200)
 
     def __on_cancel(self, ev):
-        self.__quantum_computer.removeGate(*self.__ij)
+        self.__quantum_computer.remove_gate(*self.__ij)
         self.EndModal(100)
 
 
