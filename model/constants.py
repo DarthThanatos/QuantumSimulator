@@ -15,3 +15,4 @@ PHASE_SCALE = "phase_scale"
 PHASE_KICK = "phase_kick"
 C_PHASE_KICK = 'cphase'
 INV_C_PHASE_KICK = "inv_cphase"
+IDENTITY = "identity"

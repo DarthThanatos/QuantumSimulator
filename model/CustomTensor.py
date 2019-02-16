@@ -3,9 +3,8 @@ from qutip import Qobj, tensor
 
 
 class CustomTensor:
-    def __init__(self, gates, permutation=None):
+    def __init__(self, gates):
         self.__gates = gates
-        self.__permutation = permutation
         self.__max_gates_row_indices = list(map(lambda x: x.shape[0], self.__gates))
         self.__subindices = [0 for _ in range(len(self.__gates))]
         self.__enumerated_ops = list(enumerate(self.__gates))
@@ -24,7 +23,7 @@ class CustomTensor:
         for index in range(psi.shape[0]):
             self.__fill_subindices_array(index)
             opColumn = self.createColumnFunc(psi)
-            elem = (opColumn.dag() * input).data[0,0]
+            elem = (opColumn.trans() * psi).data[0,0]
             res = append(res, array(elem))
             del opColumn
         res = Qobj(res, dims=psi.dims)

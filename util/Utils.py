@@ -5,6 +5,7 @@ from win32api import GetSystemMetrics
 
 import wx
 from functools import reduce
+import numpy as np
 
 
 def AddToolButtonBmpIS(frame, toolbar, path, hint, triggermeth, toggleBmp ='', type=wx.BITMAP_TYPE_PNG):
@@ -71,3 +72,14 @@ def get_screen_w_h():
 def get_screen_middle_point():
     w,h = get_screen_w_h()
     return w/2, h/2
+
+def to_bin_str(value, nqubits):
+    return bin(value)[2:].zfill(nqubits)
+
+def print_register_state(psi, nqubits):
+    for existing_state in psi.data.tocoo().row:
+        binS = to_bin_str(existing_state, nqubits)
+        amplitude = psi.data[existing_state, 0]
+        probability = np.abs(amplitude) ** 2
+        print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
+    print("="*20)

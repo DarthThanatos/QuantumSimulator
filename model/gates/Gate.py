@@ -80,7 +80,7 @@ class Gate:
         self._parameters[name] = type_convertion(eval(value))
 
     def __str__(self):
-        return str(self._parameters) + " target qubit: " + str(self._qbit)
+        return str(self.get_name()) + " with target qubit at: " + str(self._qbit)
 
     def transform_vector(self, vector):
         raise Exception("no transformation")
