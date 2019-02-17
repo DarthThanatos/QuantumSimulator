@@ -4,9 +4,10 @@ from util.Utils import newScaledImgBitmap
 
 class DeleteQbitButton(wx.Button):
 
-    def __init__(self, parent, index, qbitMenu, quantumComputer):
+    def __init__(self, parent, index, qbitMenu, gate_mediator, quantumComputer):
         wx.Button.__init__(self, parent, size=(GATE_SIZE, GATE_SIZE))
         self.qbitMenu = qbitMenu
+        self.__gate_mediator = gate_mediator
         self.index = index
         self.quantumComputer = quantumComputer
         self.SetBitmap(newScaledImgBitmap("../Images/Circuit/delete.png", (GATE_SIZE, GATE_SIZE)))
@@ -19,4 +20,4 @@ class DeleteQbitButton(wx.Button):
 
     def onClick(self, ev):
         self.quantumComputer.remove_qbit(self.index)
-        self.GetParent().resetView()
+        self.__gate_mediator.register_changed()

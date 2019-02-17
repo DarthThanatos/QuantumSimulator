@@ -3,9 +3,10 @@ from view.new_circuit.constants import *
 from util.Utils import newScaledImgBitmap
 
 class QbitButton(wx.Button):
-    def __init__(self, parent,  index, qbitMenu, quantumComputer):
+    def __init__(self, parent,  index, qbitMenu, gate_mediator, quantumComputer):
         wx.Button.__init__(self, parent= parent, size=(GATE_SIZE, GATE_SIZE))
         self.quantumComputer = quantumComputer
+        self.__gate_mediator = gate_mediator
         self.value = quantumComputer.qbit_value_at(index)
         self.index = index
         self.qbitMenu = qbitMenu
@@ -22,7 +23,7 @@ class QbitButton(wx.Button):
 
     def onClick(self, ev):
         self.quantumComputer.swap_qbit_value_at(self.index)
-        self.GetParent().resetView()
+        self.__gate_mediator.register_changed()
 
     def setValueView(self):
         self.SetBitmap(newScaledImgBitmap(KET_0 if self.value == 0 else KET_1, (GATE_SIZE, GATE_SIZE)))

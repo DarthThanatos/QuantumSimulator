@@ -3,6 +3,7 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from util.Utils import newIconButton
+from view.Inspector import CircuitInspector
 from view.new_circuit.GateDragger import GateDragger
 from view.new_circuit.GatePlacer import GatePlacer
 from view.new_circuit.MultiqbitGatePlacer import MultiqbitGatePlacer
@@ -21,7 +22,8 @@ class CircuitPanel(wx.Panel):
     def __init__(self, parent, quantum_computer, gate_mediator):
         size = (self.getW(), self.getH())
         wx.Panel.__init__(self, parent, size=size)
-
+        self.__gate_mediator = gate_mediator
+        gate_mediator.set_circuit_view(self)
         self.__quantum_computer = quantum_computer
         self.shouldStimulate = False
         self.filled_slots = {} # (i,j) => gateTile
@@ -125,8 +127,8 @@ class CircuitPanel(wx.Panel):
         qbitHorizontalBox = wx.GridSizer(3)
         qbitHorizontalBox.Add(self.newQbitLabel(i), 0, wx.CENTER)
         qbitMenu = QbitMenu()
-        delBtn = DeleteQbitButton(self, i, qbitMenu, self.__quantum_computer)
-        qbtn = QbitButton(self, i, qbitMenu, self.__quantum_computer)
+        delBtn = DeleteQbitButton(self, i, qbitMenu, self.__gate_mediator, self.__quantum_computer)
+        qbtn = QbitButton(self, i, qbitMenu, self.__gate_mediator, self.__quantum_computer)
         qbitMenu.setViews(qbtn, delBtn, qbitHorizontalBox)
         qbitHorizontalBox.Add(qbtn)
         qbitHorizontalBox.Add(delBtn)
@@ -146,7 +148,7 @@ class CircuitPanel(wx.Panel):
 
     def onAddQbit(self, ev):
         self.__quantum_computer.add_qbit()
-        self.resetView()
+        self.__gate_mediator.register_changed()
 
     def getW(self):
         return (MAX_COLUMNS + 2) * GATE_SIZE + MAX_COLUMNS * GATE_H_SPACE
@@ -228,7 +230,7 @@ class CircuitStd(wx.Panel):
 
     def __init__(self, parent, gateMediator, quantum_computer):
         wx.Panel.__init__(self, parent)
-        self.gateMediator = gateMediator
+        self.__gate_mediator = gateMediator
         self.__quantum_computer = quantum_computer
         self.__circuit_panel = None
         self.__fast_forward = None
@@ -241,13 +243,13 @@ class CircuitStd(wx.Panel):
         rootSizer.Add(self.newSimulationActionPanels(), 0, wx.CENTER)
         rootSizer.AddSpacer(30)
         rootSizer.Add(self.newCircuitScroll())
-        self.__pass_circuit()
         self.SetSizer(rootSizer)
+        self.__pass_circuit()
 
     def newCircuitScroll(self):
         circuitScroll = ScrolledPanel(self, size=(1500, 700))
         vbox = wx.BoxSizer(wx.VERTICAL)
-        self.__circuit_panel = CircuitPanel(circuitScroll, self.__quantum_computer, self.gateMediator)
+        self.__circuit_panel = CircuitPanel(circuitScroll, self.__quantum_computer, self.__gate_mediator)
         vbox.Add(self.__circuit_panel)
         circuitScroll.SetSizer(vbox)
         circuitScroll.SetupScrolling()
@@ -265,19 +267,19 @@ class CircuitStd(wx.Panel):
         return simulSizer
 
     def __new_fast_forward_btn(self):
-        self.__fast_forward = FastForwardActionPanel(self, self.__quantum_computer)
+        self.__fast_forward = FastForwardActionPanel(self, self.__gate_mediator, self.__quantum_computer)
         return self.__fast_forward
 
     def __new_fast_back_btn(self):
-        self.__fast_back = FastBackActionPanel(self, self.__quantum_computer)
+        self.__fast_back = FastBackActionPanel(self, self.__gate_mediator, self.__quantum_computer)
         return self.__fast_back
 
     def __new_next_btn(self):
-        self.__next = NextActionPanel(self, self.__quantum_computer)
+        self.__next = NextActionPanel(self, self.__gate_mediator, self.__quantum_computer)
         return self.__next
 
     def __new_back_btn(self):
-        self.__back = BackActionPanel(self, self.__quantum_computer)
+        self.__back = BackActionPanel(self, self.__gate_mediator, self.__quantum_computer)
         return self.__back
 
     def __pass_circuit(self):
@@ -286,5 +288,19 @@ class CircuitStd(wx.Panel):
         self.__fast_back.set_circuit(self.__circuit_panel)
         self.__fast_forward.set_circuit(self.__circuit_panel)
 
-    def stimula(self, shouldStimulate, gateName=None):
-        self.__circuit_panel.stimula(shouldStimulate, gateName)
+    def circuit_view(self):
+        return self.__circuit_panel
+
+class CircuitStd_(wx.Panel):
+
+    def __init__(self, parent, gate_mediator, quantum_computer):
+        wx.Panel.__init__(self, parent)
+        root_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.__inspector = CircuitInspector(parent=self, gate_mediator=gate_mediator, quantum_computer=quantum_computer)
+        self.__circuit = CircuitStd(self, gate_mediator, quantum_computer)
+        root_sizer.Add(self.__inspector)
+        root_sizer.Add(self.__circuit)
+        self.SetSizer(root_sizer)
+
+    def circuit_view(self):
+        return self.__circuit.circuit_view()

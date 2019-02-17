@@ -4,8 +4,9 @@ from view.new_circuit.constants import *
 
 
 class SimulActionPanel(wx.Panel):
-    def __init__(self, parent, quantum_computer):
+    def __init__(self, parent, gate_mediator, quantum_computer):
         wx.Panel.__init__(self, parent)
+        self.__gate_mediator = gate_mediator
         self._quantum_computer = quantum_computer
         self.__circuit = None
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -26,7 +27,7 @@ class SimulActionPanel(wx.Panel):
 
     def onclick(self, ev):
         self.controlSimulation()
-        self.__circuit.resetView()
+        self.__gate_mediator.register_changed()
 
     def controlSimulation(self):
         raise Exception("control simulation not implemented")

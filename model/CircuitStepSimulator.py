@@ -17,13 +17,15 @@ class CircuitStepSimulator:
         self.__single_gates = None
         self.__measure_gates = None
         self.__multi_gates = None
-        self.__simulation_on = False
         self.__step = -1
         self.__quantum_computer = quantum_computer
         self.__current_psi = None
 
+    def current_simulation_psi(self):
+        return self.__current_psi
+
     def is_simulation_on(self):
-        return self.__simulation_on
+        return self.__step != -1
 
     def simulation_step(self):
         return self.__step
@@ -112,10 +114,8 @@ class CircuitStepSimulator:
         self.__multi_gates = multi_gates
         if self.__step == -1:
             self.__current_psi = self.__quantum_computer.initial_register_ket()
-        self.__simulation_on = True
 
     def fast_back(self):
-        self.__simulation_on = False
         self.__step = -1
         self.__current_psi = self.__quantum_computer.initial_register_ket()
         print("fast back")

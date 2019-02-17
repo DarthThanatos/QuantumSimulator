@@ -53,9 +53,6 @@ class SimulatorApp(wx.App):
 
         self.gateMediator = GateMediator()
 
-        inspector = Inspector(frame, self.gateMediator)
-        inspector.Show()
-
         editor = Editor(frame, self.gateMediator, quantum_computer)
         editor.Show()
 
@@ -63,7 +60,7 @@ class SimulatorApp(wx.App):
         self.main.initUpperMenu()
         self.main.Show()
 
-        self.gateMediator.setViews(frame, main, editor, inspector)
+        self.gateMediator.set_frame(frame)
         return True
 
     def OnLoaded(self):

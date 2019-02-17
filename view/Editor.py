@@ -2,7 +2,7 @@ import threading
 
 from util.Utils import *
 from view.Notepad import Notepad
-from view.new_circuit.CircuitStd import CircuitStd
+from view.new_circuit.CircuitStd import CircuitStd, CircuitStd_
 from view.old_circuit.Circuit import Circuit
 
 [wxID_EDITORFRAME, wxID_EDITORFRAMESTATUSBAR, wxID_EDITORFRAMETABS,
@@ -172,15 +172,26 @@ class Editor(wx.MDIChildFrame):
     prefsBmp = '../Images/Modules/PrefsFolder.png'
 
 
+    def setDefaultSize(self):
+        paletteHeight = 120
+        editorScreenWidthPerc = 0.73
+        screenX, screenY, screenWidth, screenHeight = wx.GetClientDisplayRect()
+        # edWidth = int(screenWidth * editorScreenWidthPerc)
+        edWidth = screenWidth
+        inspWidth = screenWidth - edWidth + 1
+        underPalette = paletteHeight + screenY
+        bottomHeight = screenHeight - paletteHeight - 65
+        windowManagerSide = 5
+        left = inspWidth + windowManagerSide*2 + screenX - 10
+        self.SetSize(0, underPalette + screenY,
+              edWidth, bottomHeight)
 
     def __init__(self, parent, gateMediator, quantum_computer):
 
-        wx.MDIChildFrame.__init__(self, id=wxID_EDITORFRAME, name='', parent=parent,
+        wx.MDIChildFrame.__init__(self,name='', parent=parent,
               pos=wx.Point(68, 72), size=wx.Size(810, 515),
-                                  style=wx.SIMPLE_BORDER,
-              title='Editor')
+                                  style=wx.SIMPLE_BORDER)
         self.gateMediator = gateMediator
-
         self.setDefaultSize()
         self.modelImageList = wx.ImageList(height=16, width=16)
         self.blankEditMenu = wx.Menu(title='')
@@ -198,9 +209,9 @@ class Editor(wx.MDIChildFrame):
         self.statusBar = EditorStatusBar(id=wxID_EDITORFRAMESTATUSBAR,
               name='statusBar', parent=self, style=0)
 
-        self.toolBar = EditorToolBar(id=wxID_EDITORFRAMETOOLBAR, name='toolBar',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(802, 250),
-              style=wx.TB_HORIZONTAL | wx.NO_BORDER)
+        # self.toolBar = EditorToolBar(id=wxID_EDITORFRAMETOOLBAR, name='toolBar',
+        #       parent=self, pos=wx.Point(0, 0), size=wx.Size(802, 250),
+        #       style=wx.TB_HORIZONTAL | wx.NO_BORDER)
 
         self.tabs = wx.Notebook(id=wxID_EDITORFRAMETABS, name='tabs',
               parent=self, pos=wx.Point(2, 2), size=wx.Size(798,
@@ -211,7 +222,7 @@ class Editor(wx.MDIChildFrame):
 
 
         self.SetStatusBar(self.statusBar)
-        self.SetToolBar(self.toolBar)
+        # self.SetToolBar(self.toolBar)
         self.SetIcon(wx.Icon(self.editorIcon))
 
         self.toolAccels = []
@@ -219,8 +230,8 @@ class Editor(wx.MDIChildFrame):
         self.numFixedPages = 0
 
         # Explorer
-        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator=gateMediator, Page=CircuitStd, quantum_computer=quantum_computer)
-        self.notepad = self.addExplorerPage('Explorer', gateMediator=gateMediator, Page=Notepad, quantum_computer=quantum_computer)
+        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator=gateMediator, Page=CircuitStd_, quantum_computer=quantum_computer)
+        self.notepad = self.addExplorerPage('Editor', gateMediator=gateMediator, Page=Notepad, quantum_computer=quantum_computer)
         # self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
 
         self.winDimsMenu = wx.Menu()
@@ -289,17 +300,6 @@ class Editor(wx.MDIChildFrame):
     def stimula(self, shouldStimulate, gate = None):
         self.circuitStd.stimula(shouldStimulate, gate)
 
-    def setDefaultSize(self):
-        paletteHeight = 120
-        editorScreenWidthPerc = 0.73
-        screenX, screenY, screenWidth, screenHeight = wx.GetClientDisplayRect()
-        edWidth = int(screenWidth * editorScreenWidthPerc)
-        inspWidth = screenWidth - edWidth + 1
-        underPalette = paletteHeight + screenY
-        bottomHeight = screenHeight - paletteHeight - 65
-        windowManagerSide = 5
-        self.SetSize(inspWidth + windowManagerSide*2 + screenX - 10, underPalette + screenY,
-              edWidth, bottomHeight)
 
     def OnTabsNotebookPageChanged(self, ev):
         pass

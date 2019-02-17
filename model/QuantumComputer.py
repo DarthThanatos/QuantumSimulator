@@ -2,6 +2,8 @@
 from model.Circuit import Circuit
 from model.CircuitStepSimulator import CircuitStepSimulator
 from model.gates.GateCreator import GateCreator
+from util.Utils import to_bin_str
+import numpy as np
 
 
 class QuantumComputer:
@@ -10,6 +12,20 @@ class QuantumComputer:
         self.__circuit = Circuit(nqbits)
         self.__gate_creator = GateCreator()
         self.__step_simulator = CircuitStepSimulator(self)
+
+    def current_simulation_psi(self):
+        psi = self.__step_simulator.current_simulation_psi()
+        return psi if self.__step_simulator.is_simulation_on() else self.__circuit.initial_register_ket()
+
+    def current_simulation_psi_str(self):
+        psi = self.current_simulation_psi()
+        str_psi = ""
+        for existing_state in psi.data.tocoo().row:
+            binS = to_bin_str(existing_state, self.circuit_qubits_number())
+            amplitude = psi.data[existing_state, 0]
+            probability = np.abs(amplitude) ** 2
+            str_psi += "|{0}> |{1}>: prob: {2:.2f} ampl: {3:.2f}\n".format(existing_state, binS, probability, amplitude)
+        return str_psi
 
     def initial_register_ket(self):
         return self.__circuit.initial_register_ket()
