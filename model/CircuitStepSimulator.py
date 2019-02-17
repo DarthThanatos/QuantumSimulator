@@ -1,6 +1,7 @@
 from functools import reduce
 
 from model.CustomTensor import CustomTensor
+from model.FullMeasurement import FullMeasurement
 from model.MultQubitTransformation import MultiQubitTransformation
 from model.gates.Identity import Identity
 
@@ -72,6 +73,23 @@ class CircuitStepSimulator:
     def __measure(self):
         if not self.__measure_gates.__contains__(self.__step):
             return
+        if self.__should_measure_fully():
+            self.__measure_fully()
+        else:
+            self.__measure_fine_grainly()
+
+    def __measure_fine_grainly(self):
+        for i in self.__measure_gates[self.__step]:
+            measure_gate = self.__measure_gates[self.__step][i]
+            self.__current_psi = measure_gate.transform(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+
+    def __should_measure_fully(self):
+        current_measurements = self.__measure_gates[self.__step]
+        return len(current_measurements.keys()) == self.__quantum_computer.circuit_qubits_number()
+
+    def __measure_fully(self):
+        full_measurement = FullMeasurement(self.__quantum_computer.circuit_qubits_number())
+        self.__current_psi = full_measurement.transform(self.__current_psi)
 
     def __process_multi_gates(self):
         if not self.__multi_gates.__contains__(self.__step):

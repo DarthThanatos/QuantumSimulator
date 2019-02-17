@@ -81,6 +81,3 @@ class Gate:
 
     def __str__(self):
         return str(self.get_name()) + " with target qubit at: " + str(self._qbit)
-
-    def transform_vector(self, vector):
-        raise Exception("no transformation")
