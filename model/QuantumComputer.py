@@ -1,6 +1,8 @@
 
 from model.Circuit import Circuit
 from model.CircuitStepSimulator import CircuitStepSimulator
+from model.CodeProcessor import CodeProcessor
+from model.QuantumInstance import QuantumInstance
 from model.gates.GateCreator import GateCreator
 from util.Utils import to_bin_str
 import numpy as np
@@ -12,6 +14,16 @@ class QuantumComputer:
         self.__circuit = Circuit(nqbits)
         self.__gate_creator = GateCreator()
         self.__step_simulator = CircuitStepSimulator(self)
+        self.__code_processor = CodeProcessor(self)
+        self.__current_scripting_instance = None
+
+    def run_code(self, code_string, file_name, for_simulation):
+        # returns std_err and std_out of executed command concatenated to a string
+        return self.__code_processor.run_code(code_string, file_name, for_simulation)
+
+    def get_quantum_instance(self, for_simulation=True):
+        self.__current_scripting_instance = QuantumInstance(self, for_simulation)
+        return self.__current_scripting_instance
 
     def current_simulation_psi(self):
         psi = self.__step_simulator.current_simulation_psi()

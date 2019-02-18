@@ -1,6 +1,11 @@
 import numpy as np
 from numpy import array, sqrt, exp, pi, abs
 
+quantum_instance.hello_world()
+quantum_instance.init_register(nqubits=3, register_value=1)
+print(quantum_instance)
+help(quantum_instance)
+
 sqrt2 = 1./(sqrt(2))
 H = array([[sqrt2, sqrt2], [sqrt2, -sqrt2]])
 zero = array([1., 0.])

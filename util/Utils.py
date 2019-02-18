@@ -55,6 +55,13 @@ def newIconButton(parent, size, icon_path, on_click, color=wx.WHITE):
     btn.SetBitmap(newScaledImgBitmap(icon_path, size))
     return btn
 
+
+def newStandardButton(parent, size, label, on_click):
+    btn = wx.Button(parent, size=size, label=label)
+    btn.Bind(wx.EVT_BUTTON, on_click)
+    return btn
+
+
 def flatten_list(listOfLists, fun = lambda x: x):
     return reduce(list.__add__, map(fun, listOfLists))
 
