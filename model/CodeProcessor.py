@@ -1,16 +1,18 @@
 import sys
 from io import StringIO
 
-class CodeProcessor:
+from model.Circuit import Circuit
+from model.QuantumInstance import QuantumInstance
 
-    def __init__(self, quantum_computer):
-        self.__quantum_computer = quantum_computer
+
+class CodeProcessor:
 
     def run_code(self, code_string, file_name, for_simulation):
         # create file-like string to capture output
         codeOut = StringIO()
         codeErr = StringIO()
-        quantum_instance = self.__quantum_computer.get_quantum_instance(for_simulation)
+        circuit = Circuit(1)
+        quantum_instance = QuantumInstance(for_simulation, circuit)
         safe_list = ['quantum_instance']
         current_locals = locals() # must be here, not in generator function, as locals are different there
         safe_dict = dict([(k, current_locals.get(k, None)) for k in safe_list])
@@ -29,4 +31,9 @@ class CodeProcessor:
         out += codeErr.getvalue()
         codeOut.close()
         codeErr.close()
-        return out
+        return out, circuit
+
+    def generate_current_circuit_code(self, circuit, file_name):
+        generated = "help(quantum_instance)"
+        with open(file_name, 'w+') as f:
+            f.write(generated)

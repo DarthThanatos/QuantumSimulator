@@ -1,5 +1,6 @@
 
 from util.Utils import *
+from wx.lib.scrolledpanel import ScrolledPanel
 
 wxID_INSPECTORFRAME = wx.NewId()
 wxID_SWITCHEDITOR = wx.NewId()
@@ -239,10 +240,10 @@ class InspectorNotebook(wx.Notebook):
 wxID_EVTCATS = wx.NewId()
 wxID_EVTMACS = wx.NewId()
 
+
 class BlochCanvas(wx.ScrolledWindow):
     def __init__(self, parent, gate_mediator, quantum_computer):
-        wx.ScrolledWindow. __init__(self, parent, -1,
-                          style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
+        wx.ScrolledWindow. __init__(self, parent, -1, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
         self.__gate_mediator = gate_mediator
         gate_mediator.set_bloch_canvas(self)
         self.__quantum_computer = quantum_computer
@@ -268,6 +269,47 @@ class BlochCanvas(wx.ScrolledWindow):
         ppiw, ppih = wx.GetDisplayPPI()
         self.figure.set_size_inches( (w / ppiw, w / ppiw))
 
+
+class RestoreExperimentButton(wx.Button):
+
+    def __init__(self, parent, label, experiment_index, gate_mediator, quantum_computer):
+        wx.Button.__init__(self, parent, label = label, size=(-1, 50))
+        self.__gate_mediator = gate_mediator
+        self.__experiment_index = experiment_index
+        self.__quantum_computer = quantum_computer
+        self.Bind(wx.EVT_BUTTON, self.__on_click)
+
+    def __on_click(self, event):
+        self.__quantum_computer.restore_experiment_at(self.__experiment_index)
+        self.__gate_mediator.history_changed()
+
+
+class HistoryPanel(ScrolledPanel):
+
+    def __init__(self, parent, gate_mediator, quantum_computer):
+        super().__init__(parent)
+        self.__quantum_computer = quantum_computer
+        self.__gate_mediator = gate_mediator
+        gate_mediator.set_history_panel(self)
+        self.__root_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.__create_new_history_view()
+        self.SetSizer(self.__root_sizer)
+
+    def __create_new_history_view(self):
+        self.__root_sizer.AddSpacer(20)
+        self.__root_sizer.Add(new_big_font_label(self, "History of experiments"), 0, wx.CENTER)
+        self.__root_sizer.AddSpacer(20)
+        for experiment in self.__quantum_computer.all_experiments():
+            label = "restore experiment {} created at {}".format(experiment.index(), experiment.date())
+            self.__root_sizer.Add(RestoreExperimentButton(self, label, experiment.index(), self.__gate_mediator, self.__quantum_computer), 0, wx.CENTER)
+        self.__root_sizer.Layout()
+
+    def reset_view(self):
+        self.DestroyChildren()
+        self.__root_sizer.Clear()
+        self.__create_new_history_view()
+
+
 class CircuitInspector(wx.SplitterWindow):
     """ Window that hosts event name values and event category selection """
     def __init__(self, parent, gate_mediator, quantum_computer):
@@ -278,9 +320,8 @@ class CircuitInspector(wx.SplitterWindow):
 
         self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
         self.__probs_area = None
-        probs_panel = self.__new_probs_panel()
 
-        self.SplitHorizontally(probs_panel, self.__bloch_canvas)
+        self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
         self.__sash_pos = 800
         self.SetSashPosition(self.__sash_pos)
 
@@ -292,10 +333,24 @@ class CircuitInspector(wx.SplitterWindow):
         self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
         self.__bind()
 
-    def __new_probs_panel(self):
-        panel = wx.Panel(self)
-        self.__probs_area = wx.TextCtrl(panel, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER | wx.TE_NO_VSCROLL, size=(445, 800))
-        self.__probs_area.SetValue(('\n' * 15) + self.__quantum_computer.current_simulation_psi_str())
+    def __new_probs_history_splitter(self):
+        probs_history_splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
+        probs_panel = self.__new_probs_panel(probs_history_splitter)
+        history_panel = HistoryPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
+        probs_history_splitter.SplitHorizontally(probs_panel, history_panel, 375)
+        return probs_history_splitter
+
+    def __new_probs_panel(self, parent):
+        panel = ScrolledPanel(parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(20)
+        sizer.Add(new_big_font_label(panel, "State of the register"), 0, wx.CENTER)
+        sizer.AddSpacer(20)
+        self.__probs_area = wx.TextCtrl(panel, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER)
+        self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
+        sizer.Add(self.__probs_area, wx.EXPAND, wx.EXPAND)
+        sizer.Layout()
+        panel.SetSizer(sizer)
         return panel
 
     def __bind(self):
@@ -312,7 +367,7 @@ class CircuitInspector(wx.SplitterWindow):
         nqubits = self.__quantum_computer.circuit_qubits_number()
         self.__should_show = nqubits == 1
         self.__timer.Start(20)
-        self.__probs_area.SetValue(('\n' * 15) + self.__quantum_computer.current_simulation_psi_str())
+        self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
 
     def __show_bloch(self, _):
         if not self.__should_show:

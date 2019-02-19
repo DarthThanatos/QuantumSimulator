@@ -1,7 +1,7 @@
 class QuantumInstance:
 
-    def __init__(self, quantum_computer, should_simulate=True):
-        self.__quantum_computer = quantum_computer
+    def __init__(self, should_simulate, circuit):
+        self.__circuit = circuit
         self.__nqubits = 0
         self.__register_value = 0
         self.__should_simulate = should_simulate

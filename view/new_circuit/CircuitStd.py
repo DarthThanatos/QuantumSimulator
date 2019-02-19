@@ -13,6 +13,7 @@ from view.new_circuit.constants import *
 from view.new_circuit.qbit_btn_menu.DeleteQbitButton import DeleteQbitButton
 from view.new_circuit.qbit_btn_menu.QbitButton import QbitButton
 from view.new_circuit.qbit_btn_menu.QbitMenu import QbitMenu
+from view.new_circuit.simulation_panel.GenerateCodeButton import GenerateCodeButton
 from view.new_circuit.simulation_panel.SimulationPanel import FastBackActionPanel, NextActionPanel, \
     FastForwardActionPanel, BackActionPanel
 
@@ -237,6 +238,7 @@ class CircuitStd(wx.Panel):
         self.__fast_back = None
         self.__back = None
         self.__next = None
+        self.__generate = None
         self.shouldStimulate = False
         rootSizer = wx.BoxSizer(wx.VERTICAL)
         rootSizer.AddSpacer(30)
@@ -264,6 +266,8 @@ class CircuitStd(wx.Panel):
         simulSizer.Add(self.__new_next_btn())
         simulSizer.AddSpacer(20)
         simulSizer.Add(self.__new_fast_forward_btn())
+        simulSizer.AddSpacer(20)
+        simulSizer.Add(self.__new_generate_code_btn())
         return simulSizer
 
     def __new_fast_forward_btn(self):
@@ -281,6 +285,10 @@ class CircuitStd(wx.Panel):
     def __new_back_btn(self):
         self.__back = BackActionPanel(self, self.__gate_mediator, self.__quantum_computer)
         return self.__back
+
+    def __new_generate_code_btn(self):
+        self.__generate = GenerateCodeButton(self, self.__gate_mediator, self.__quantum_computer)
+        return self.__generate
 
     def __pass_circuit(self):
         self.__back.set_circuit(self.__circuit_panel)

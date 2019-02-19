@@ -192,6 +192,7 @@ class Editor(wx.MDIChildFrame):
               pos=wx.Point(68, 72), size=wx.Size(810, 515),
                                   style=wx.SIMPLE_BORDER)
         self.gateMediator = gateMediator
+        gateMediator.set_editor(self)
         self.setDefaultSize()
         self.modelImageList = wx.ImageList(height=16, width=16)
         self.blankEditMenu = wx.Menu(title='')
@@ -296,6 +297,12 @@ class Editor(wx.MDIChildFrame):
         self.SetDropTarget(dt)
 
         self.tabs.SetMinSize(wx.DefaultSize)
+
+    def switch_to_circuit_view(self):
+        self.tabs.SetSelection(0)
+
+    def switch_to_notepad_view(self):
+        self.tabs.SetSelection(1)
 
     def stimula(self, shouldStimulate, gate = None):
         self.circuitStd.stimula(shouldStimulate, gate)

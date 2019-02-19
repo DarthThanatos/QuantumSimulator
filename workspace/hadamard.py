@@ -2,7 +2,7 @@ import numpy as np
 from numpy import array, sqrt, exp, pi, abs
 
 quantum_instance.hello_world()
-quantum_instance.init_register(nqubits=3, register_value=1)
+quantum_instance.init_register(nqubits=1, register_value=1)
 print(quantum_instance)
 help(quantum_instance)
 

@@ -1,15 +1,15 @@
-import re
 import wx.stc as stc
 
 import keyword
 import wx, os
 
-from util.Utils import newStandardButton
+from util.Utils import newStandardButton, get_workspace_path
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from wx.aui import AuiNotebook
+
 
 class CodeNotebook(AuiNotebook):
 
@@ -37,7 +37,7 @@ class CodeNotebook(AuiNotebook):
             with open(path, "w") as f:
                 f.write(text_area.GetValue())
         self.RemovePage(position)
-        self.DeletePage(position)
+        self.RemoveChild(text_area)
         text_area.DestroyLater()
 
     def __save_files_regularly(self, ev):
@@ -46,8 +46,8 @@ class CodeNotebook(AuiNotebook):
                 path = self.rootPath + '\\' + file
                 with open(path, "w") as f:
                     f.write(text_area.GetValue())
-            except:
-                pass
+            except Exception as e:
+                print(e)
 
     def deleteTabIfExists(self, full_file_path_to_close):
         file_to_close = full_file_path_to_close.split(self.rootPath)[1][1:]
@@ -181,7 +181,7 @@ class Notepad(wx.SplitterWindow):
         self.__quantum_computer = quantum_computer
         self.__console = None
         self.__notebook = None
-        self.workspacePath = self.getWorkspacePath()
+        self.workspacePath = get_workspace_path()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.__new_inspector_notebook_splitter(), self.newFileTree())
         self.SetSashPosition(1500)
@@ -214,7 +214,7 @@ class Notepad(wx.SplitterWindow):
     def __on_new_file(self, event):
         dialog = wx.FileDialog(
             self,
-            defaultDir=self.getWorkspacePath(),
+            defaultDir=get_workspace_path(),
             message="Choose new file name",
             wildcard="*.py",
             style=wx.FD_SAVE
@@ -264,11 +264,6 @@ class Notepad(wx.SplitterWindow):
         panel.SetSizer(fileTreeSizer)
         return panel
 
-    def getWorkspacePath(self):
-        cwd =  os.getcwd()
-        C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
-        workspacePath = C_root + subdir + "workspace"        
-        return workspacePath
 
     def newDirTree(self, parent):
         dirTree = MyTree(parent, self.workspacePath, self.__notebook)

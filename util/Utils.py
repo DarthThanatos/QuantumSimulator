@@ -3,7 +3,10 @@ from math import sqrt
 import functools
 from win32api import GetSystemMetrics
 
+import re
+import os
 import wx
+
 from functools import reduce
 import numpy as np
 
@@ -90,3 +93,16 @@ def print_register_state(psi, nqubits):
         probability = np.abs(amplitude) ** 2
         print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
     print("="*20)
+
+def new_big_font_label(parent, label):
+    label = wx.StaticText(parent, label=label, style=wx.ALIGN_CENTRE)
+    font = wx.Font(18, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.NORMAL)
+    label.SetFont(font)
+    return label
+
+
+def get_workspace_path():
+    cwd = os.getcwd()
+    C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+    workspacePath = C_root + subdir + "workspace"
+    return workspacePath
