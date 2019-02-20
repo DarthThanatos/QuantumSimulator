@@ -1,5 +1,5 @@
 help(quantum_instance)
-quantum_instance.init(nqubits=3, value=0)
+quantum_instance.init_register(nqubits=3, value=0)
 quantum_instance.X(step=2, target=0)
 quantum_instance.Y(step=3, target=0)
 quantum_instance.Z(step=4, target=0)

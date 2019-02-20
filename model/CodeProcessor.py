@@ -4,6 +4,7 @@ from io import StringIO
 from model.Circuit import Circuit
 from model.QuantumInstance import QuantumInstance
 from model.constants import QUANTUM_INSTANCE
+import traceback
 
 
 class CodeProcessor:
@@ -24,7 +25,7 @@ class CodeProcessor:
             code_object = compile(code_string, file_name, 'exec')
             exec(code_object, safe_dict)
         except Exception as e:
-            print(e)  # error message is printed to stdout, which at this moment is captured by codeOut
+            traceback.print_exc()  # error message is printed to stdout, which at this moment is captured by codeOut
         # restore stdout and stderr
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -44,7 +45,7 @@ class CodeProcessor:
             f.write(generated)
 
     def __generate_init_code(self, circuit):
-        code = "{}.init(nqubits={}, value={})\n".format(QUANTUM_INSTANCE, circuit.circuit_qubits_number(), circuit.initial_int_value())
+        code = "{}.init_register(nqubits={}, value={})\n".format(QUANTUM_INSTANCE, circuit.circuit_qubits_number(), circuit.initial_int_value())
         return code
 
     def __generate_single_gates_code(self, circuit, single_gates):

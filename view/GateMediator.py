@@ -70,8 +70,7 @@ class GateMediator:
         self.__history_panel.reset_view()
         self.__editor.switch_to_circuit_view()
 
-    def history_changed(self):
-        self.__history_panel.reset_view()
+    def experiment_changed(self):
         self.__circuit_view.resetView()
         self.__circuit_inspector.reset_view()
         self.__bloch_canvas.reset_view()

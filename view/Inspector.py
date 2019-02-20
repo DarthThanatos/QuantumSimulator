@@ -47,7 +47,7 @@ class RestoreExperimentButton(wx.Button):
 
     def __on_click(self, event):
         self.__quantum_computer.restore_experiment_at(self.__experiment_index)
-        self.__gate_mediator.history_changed()
+        self.__gate_mediator.experiment_changed()
 
 
 class HistoryPanel(ScrolledPanel):

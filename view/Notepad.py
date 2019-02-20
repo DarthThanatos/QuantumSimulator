@@ -288,7 +288,7 @@ class Notepad(wx.SplitterWindow):
 
     def __new_notebook(self, splitter):
         self.__notebook = CodeNotebook(splitter, self.workspacePath, self.__gate_mediator, self.__quantum_computer)
-        self.__notebook.new_tab_if_not_exists("{}/hadamard.py".format(self.workspacePath), retain_content=False)
+        self.__notebook.new_tab_if_not_exists("{}/api.py".format(self.workspacePath), retain_content=False)
         return self.__notebook
 
     def __new_console_panel(self, splitter):
