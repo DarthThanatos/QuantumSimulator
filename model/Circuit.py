@@ -53,6 +53,9 @@ class Circuit:
         # ^ dict of dicts { j -> { (ctrl1, ctrl2 ...) -> gate } }, where name is a simple target gate name,
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
 
+    def initial_int_value(self):
+        return self.__register.value
+
     def current_simulation_psi(self):
         psi = self.__step_simulator.current_simulation_psi()
         return psi if self.__step_simulator.is_simulation_on() else self.initial_register_ket()
@@ -260,7 +263,7 @@ class Circuit:
                 simulation_gates[j][i] = gate
         return collections.OrderedDict(sorted(simulation_gates.items()))
 
-    def __simulation_single_gates_dict(self):
+    def simulation_single_gates_dict(self):
         def reject(i, j, gate):
             return self.__gate_entry_in_multi_gates(i, j) or gate.get_name() == MEASURE
         return self.__simulation_gates_dict(reject)
@@ -273,12 +276,12 @@ class Circuit:
                 return True
         return False
 
-    def __simulation_measure_gates_dict(self):
+    def simulation_measure_gates_dict(self):
         def reject(_i, _j, gate):
             return gate.get_name() != MEASURE
         return self.__simulation_gates_dict(reject)
 
-    def __simulation_multi_gates_dict(self):
+    def simulation_multi_gates_dict(self):
         return collections.OrderedDict(sorted(self.__multi_gates.items()))
 
     def next_step(self):
@@ -294,11 +297,10 @@ class Circuit:
         self.__step_simulator.fast_back()
 
     def __with_initialization(self, simulator_fun):
-        single_gates = self.__simulation_single_gates_dict()
-        measure_gates = self.__simulation_measure_gates_dict()
-        multi_gates = self.__simulation_multi_gates_dict()
+        single_gates = self.simulation_single_gates_dict()
+        measure_gates = self.simulation_measure_gates_dict()
+        multi_gates = self.simulation_multi_gates_dict()
         simulator_fun(single_gates, measure_gates, multi_gates)
 
     def simulation_step(self):
         return self.__step_simulator.simulation_step()
-

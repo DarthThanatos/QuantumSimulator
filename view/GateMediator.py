@@ -12,6 +12,10 @@ class GateMediator:
         self.__code_notebook = None
         self.__notepad = None
         self.__history_panel = None
+        self.__tree = None
+
+    def set_tree(self, tree):
+        self.__tree = tree
 
     def set_editor(self, editor):
         self.__editor = editor
@@ -74,5 +78,8 @@ class GateMediator:
 
     def generate_code(self, quantum_computer, file_name):
         quantum_computer.generate_current_circuit_code(file_name)
-        self.__code_notebook.newTabIfNotExists(file_name)
         self.__editor.switch_to_notepad_view()
+        self.__code_notebook.newTabIfNotExists(file_name, retain_content=False)
+
+    def window_closing(self):
+        self.__tree.stop_observer()

@@ -1,3 +1,6 @@
+import datetime
+import traceback
+
 import wx.stc as stc
 
 import keyword
@@ -19,11 +22,18 @@ class CodeNotebook(AuiNotebook):
         self.rootPath = rootPath
         self.__gate_mediator = gate_mediator
         gate_mediator.set_code_notebook(self)
-        self.__timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.__save_files_regularly, self.__timer)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.__on_page_close)
-        self.__timer.Start(5000)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
         self.__quantum_computer = quantum_computer
+
+    def __on_destroy(self, event):
+        for file, text_area in self.openCards.items():
+            try:
+                path = self.rootPath + '\\' + file
+                with open(path, "w") as f:
+                    f.write(text_area.GetValue().replace('\r\n', '\n'))
+            except Exception as e:
+                traceback.print_exc()
 
     def __on_page_close(self, event):
         file = self.GetPageText(event.GetSelection())
@@ -35,32 +45,32 @@ class CodeNotebook(AuiNotebook):
         if save:
             path = self.rootPath + '\\' + file
             with open(path, "w") as f:
-                f.write(text_area.GetValue())
+                f.write(text_area.GetValue().replace('\r\n', '\n'))
         self.RemovePage(position)
         self.RemoveChild(text_area)
         text_area.DestroyLater()
 
-    def __save_files_regularly(self, ev):
-        for file, text_area in self.openCards.items():
-            try:
-                path = self.rootPath + '\\' + file
-                with open(path, "w") as f:
-                    f.write(text_area.GetValue())
-            except Exception as e:
-                print(e)
+    def modify_content_if_tab_exists(self, full_file_name):
+        file_to_modify = full_file_name.split(self.rootPath)[1][1:]
+        if self.openCards.__contains__(file_to_modify):
+            with open(full_file_name, "r") as f:
+                ta = self.openCards[file_to_modify]
+                contents = f.read()
+                ta.SetValue(contents)
 
     def deleteTabIfExists(self, full_file_path_to_close):
         file_to_close = full_file_path_to_close.split(self.rootPath)[1][1:]
         if self.openCards.__contains__(file_to_close):
             self.__close(file_to_close, self.findPageByName(file_to_close), save=False)
 
-    def newTabIfNotExists(self, fileToOpen):
+    def newTabIfNotExists(self, fileToOpen, retain_content=True):
         with open(fileToOpen, "r") as f:
             cardName = fileToOpen.split(self.rootPath)
             cardName = cardName[1][1:] # [1:] -> cutting off the first slash
             if self.openCards.__contains__(cardName):
-                index = self.findPageByName(cardName)
-                self.SetSelection(index)
+                if not retain_content:
+                    ta = self.openCards[cardName]
+                    ta.SetValue(f.read())
             else:
                 ta = self.newTextArea(cardName)
                 ta.SetValue(f.read())
@@ -74,21 +84,41 @@ class CodeNotebook(AuiNotebook):
                 return i
         return None
 
+    def __on_text_area_focus_killed(self, event):
+        if not self:
+            return
+        file_name = self.__find_name_by_text_area(event.GetEventObject())
+        text_area = event.GetEventObject()
+        if file_name is None:
+            return
+        path = self.rootPath + '\\' + file_name
+        value = text_area.GetValue().replace('\r\n', '\n')
+        with open(path, "w") as f:
+            f.write(value)
+        event.Skip()
+
+    def __find_name_by_text_area(self, ta):
+        for file_name, text_area in self.openCards.items():
+            if text_area is ta:
+                return file_name
+
     def newTextArea(self, title):
         self.textArea = stc.StyledTextCtrl(parent=self, style=wx.TE_MULTILINE)
+        self.textArea.Bind(wx.EVT_KILL_FOCUS, self.__on_text_area_focus_killed)
         with open("../workspace/{}".format(title), "r") as f:
             self.textArea.SetValue(f.read())
         self.textArea.SetLexer(stc.STC_LEX_PYTHON)
         self.textArea.SetStyleBits(5)
-        self.textArea.SetMarginWidth(0, 10)
+        self.textArea.SetMarginWidth(0, 20)
         self.textArea.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-        faces = {'times': 'Times New Roman',
-                 'mono': 'Courier New',
-                 'helv': 'Arial',
-                 'other': 'Comic Sans MS',
-                 'size': 10,
-                 'size2': 8,
-                 }
+        faces = {
+            'times': 'Times New Roman',
+             'mono': 'Courier New',
+             'helv': 'Arial',
+             'other': 'Comic Sans MS',
+             'size': 10,
+             'size2': 8,
+        }
         self.textArea.SetKeyWords(0, " ".join(keyword.kwlist))
         self.textArea.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
         self.textArea.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
@@ -120,18 +150,30 @@ class TreeEventHandler(FileSystemEventHandler):
         self.__tree = tree
         self.__notebook = notebook
 
+    def on_moved(self, event):
+        # print("moved", event.src_path)
+        wx.CallAfter(self.__notebook.deleteTabIfExists, event.src_path)
+        wx.CallAfter(self.__tree.reset)
+
     def on_created(self, event):
-        self.__tree.reset()
+        # print("created", event.src_path)
+        wx.CallAfter(self.__tree.reset)
+
+    def on_modified(self, event):
+        wx.CallAfter(self.__notebook.modify_content_if_tab_exists, event.src_path)
 
     def on_deleted(self, event):
-        self.__tree.reset()
-        self.__notebook.deleteTabIfExists(event.src_path)
+        # print("deleted", event.src_path)
+        wx.CallAfter(self.__tree.reset)
+        wx.CallAfter(self.__notebook.deleteTabIfExists, event.src_path)
 
 
 class MyTree(wx.TreeCtrl):
-    def __init__(self, parent, rootPath, notebook):
+    def __init__(self, parent, rootPath, notebook, gateMediator):
         super(MyTree, self).__init__(parent)
         self.__collapsing = True
+        self.__gate_mediator = gateMediator
+        gateMediator.set_tree(self)
         self.rootPath = rootPath
         self.notebook = notebook
 
@@ -146,6 +188,10 @@ class MyTree(wx.TreeCtrl):
 
         self.reset()
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.onFileSelected)
+
+    def stop_observer(self):
+        self.__observer.stop()
+        self.__observer.join()
 
     def reset(self):
         self.Freeze()
@@ -170,7 +216,7 @@ class MyTree(wx.TreeCtrl):
             parts.insert(0, self.GetItemText(parent))
             parent = self.GetItemParent(parent)
         fileToOpen = "\\".join(parts)
-        self.notebook.newTabIfNotExists(fileToOpen)
+        self.notebook.newTabIfNotExists(fileToOpen, retain_content=False)
 
 
 class Notepad(wx.SplitterWindow):
@@ -181,6 +227,11 @@ class Notepad(wx.SplitterWindow):
         self.__quantum_computer = quantum_computer
         self.__console = None
         self.__notebook = None
+
+        self.__timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.__generate, self.__timer)
+        self.__new_file_name = ""
+
         self.workspacePath = get_workspace_path()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.__new_inspector_notebook_splitter(), self.newFileTree())
@@ -220,9 +271,12 @@ class Notepad(wx.SplitterWindow):
             style=wx.FD_SAVE
         )
         if dialog.ShowModal() == wx.ID_OK:
-            file_name = dialog.GetPath()
-            with open(file_name, 'w+'):
-                self.__notebook.newTabIfNotExists(file_name)
+            self.__new_file_name = dialog.GetPath()
+            self.__timer.StartOnce(100)
+
+    def __generate(self, event):
+        with open(self.__new_file_name, 'w+'):
+            self.__notebook.newTabIfNotExists(self.__new_file_name, retain_content=False)
 
     def __run_in_console(self, event):
         self.__gate_mediator.run_in_console(self.__quantum_computer)
@@ -232,7 +286,7 @@ class Notepad(wx.SplitterWindow):
 
     def __new_notebook(self, splitter):
         self.__notebook = CodeNotebook(splitter, self.workspacePath, self.__gate_mediator, self.__quantum_computer)
-        self.__notebook.newTabIfNotExists("{}/hadamard.py".format(self.workspacePath))
+        self.__notebook.newTabIfNotExists("{}/hadamard.py".format(self.workspacePath), retain_content=False)
         return self.__notebook
 
     def __new_console_panel(self, splitter):
@@ -266,7 +320,7 @@ class Notepad(wx.SplitterWindow):
 
 
     def newDirTree(self, parent):
-        dirTree = MyTree(parent, self.workspacePath, self.__notebook)
+        dirTree = MyTree(parent, self.workspacePath, self.__notebook, self.__gate_mediator)
         dirTree.ExpandAll()
         return dirTree
 

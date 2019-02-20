@@ -49,3 +49,16 @@ class UGate(Gate):
     def qutip_object(self):
         e_0, e_1, e_2, e_3 = list(map(lambda name: self._parameters[name], self.get_parameters_names()))
         return Qobj([[e_0, e_1], [e_2, e_3]])
+
+    def generate_single_gate_code(self, step):
+        e_0, e_1, e_2, e_3 = list(map(lambda name: self._parameters[name], self.get_parameters_names()))
+        return "{0}.{1}(step={2}, target={3}, matrix=[{4:.2f}, {5:.3f}, {6:.3f}, {7:.3f}])\n"\
+            .format(QUANTUM_INSTANCE, self.get_name(), step, self.target(), e_0, e_1, e_2, e_3)
+
+    def generate_controlled_gate_code(self, step, controls):
+        e_0, e_1, e_2, e_3 = list(map(lambda name: self._parameters[name], self.get_parameters_names()))
+        return "{0}.{1}{2}(step={3}, ctrls={4}, target={5}, matrix=[{6:.2f}, {7:.3f}, {8:.3f}, {9:.3f}])\n".format(
+            QUANTUM_INSTANCE, CONTROLLED, self.get_name(),
+            step, controls, self.target(),
+            e_0, e_1, e_2, e_3
+        )

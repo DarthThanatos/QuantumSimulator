@@ -73,6 +73,7 @@ class SimulatorApp(wx.App):
         return menu
 
     def OnCloseWindow(self, event):
+        self.gateMediator.window_closing()
         self.frame.Destroy()
 
 def main():

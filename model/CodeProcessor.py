@@ -3,6 +3,7 @@ from io import StringIO
 
 from model.Circuit import Circuit
 from model.QuantumInstance import QuantumInstance
+from model.constants import QUANTUM_INSTANCE
 
 
 class CodeProcessor:
@@ -34,6 +35,37 @@ class CodeProcessor:
         return out, circuit
 
     def generate_current_circuit_code(self, circuit, file_name):
-        generated = "help(quantum_instance)"
+        generated = "help(quantum_instance)\n"
+        generated += self.__generate_init_code(circuit)
+        generated += self.__generate_non_measure_code(circuit)
+        generated += self.__generate_multi_gates_code(circuit)
+        generated += self.__generate_measure_gates_code(circuit)
         with open(file_name, 'w+') as f:
             f.write(generated)
+
+    def __generate_init_code(self, circuit):
+        code = "{}.init(nqubits={}, value={})\n".format(QUANTUM_INSTANCE, circuit.circuit_qubits_number(), circuit.initial_int_value())
+        return code
+
+    def __generate_single_gates_code(self, circuit, single_gates):
+        code = ""
+        for j in single_gates:
+            for _, gate in single_gates[j].items():
+                code += gate.generate_single_gate_code(j)
+        return code
+
+    def __generate_non_measure_code(self, circuit):
+        single_gates = circuit.simulation_single_gates_dict()
+        return self.__generate_single_gates_code(circuit, single_gates)
+
+    def __generate_multi_gates_code(self, circuit):
+        code = ""
+        multi_gates = circuit.simulation_multi_gates_dict()
+        for j in multi_gates:
+            for ctrls, gate in multi_gates[j].items():
+                code += gate.generate_controlled_gate_code(j, list(ctrls))
+        return code
+
+    def __generate_measure_gates_code(self, circuit):
+        measure_gates = circuit.simulation_measure_gates_dict()
+        return self.__generate_single_gates_code(circuit, measure_gates)

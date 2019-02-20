@@ -1,6 +1,7 @@
 
 from math import pi
 
+from model.constants import QUANTUM_INSTANCE, CONTROLLED
 from util.Utils import flatten_dicts
 
 
@@ -81,3 +82,9 @@ class Gate:
 
     def __str__(self):
         return str(self.get_name()) + " with target qubit at: " + str(self._qbit)
+
+    def generate_single_gate_code(self, step):
+        return "{}.{}(step={}, target={})\n".format(QUANTUM_INSTANCE, self.get_name(), step, self.target())
+
+    def generate_controlled_gate_code(self, step, controls):
+        return "{}.{}{}(step={}, ctrls={}, target={})\n".format(QUANTUM_INSTANCE, CONTROLLED, self.get_name(), step, controls, self.target())

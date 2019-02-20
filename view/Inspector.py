@@ -296,6 +296,7 @@ class HistoryPanel(ScrolledPanel):
         self.SetSizer(self.__root_sizer)
 
     def __create_new_history_view(self):
+        self.Freeze()
         self.__root_sizer.AddSpacer(20)
         self.__root_sizer.Add(new_big_font_label(self, "History of experiments"), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(20)
@@ -303,6 +304,8 @@ class HistoryPanel(ScrolledPanel):
             label = "restore experiment {} created at {}".format(experiment.index(), experiment.date())
             self.__root_sizer.Add(RestoreExperimentButton(self, label, experiment.index(), self.__gate_mediator, self.__quantum_computer), 0, wx.CENTER)
         self.__root_sizer.Layout()
+        self.SetupScrolling()
+        self.Thaw()
 
     def reset_view(self):
         self.DestroyChildren()
@@ -351,6 +354,7 @@ class CircuitInspector(wx.SplitterWindow):
         sizer.Add(self.__probs_area, wx.EXPAND, wx.EXPAND)
         sizer.Layout()
         panel.SetSizer(sizer)
+        panel.SetupScrolling()
         return panel
 
     def __bind(self):

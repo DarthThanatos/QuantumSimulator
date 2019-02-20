@@ -1,3 +1,4 @@
+from model.constants import QUANTUM_INSTANCE, CONTROLLED
 from model.gates.Gate import Gate
 
 
@@ -26,3 +27,13 @@ class CPhaseKick(Gate):
 
     def is_gate_correct(self, kwargs):
         return self.__is_int(kwargs) if super().is_gate_correct(kwargs) else False
+
+    def generate_single_gate_code(self, step):
+        return "{0}.{1}(step={2}, target={3}, k={4})\n".format(QUANTUM_INSTANCE, self.get_name(), step, self.target(), self._parameters[self._K])
+
+    def generate_controlled_gate_code(self, step, controls):
+        return "{0}.{1}{2}(step={3}, ctrls={4}, target={5}, angle={6})\n".format(
+            QUANTUM_INSTANCE, CONTROLLED, self.get_name(),
+            step, controls, self.target(),
+            self._parameters[self._K]
+        )
