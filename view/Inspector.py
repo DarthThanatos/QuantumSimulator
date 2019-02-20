@@ -1,3 +1,5 @@
+import colorsys
+from math import pi
 
 from util.Utils import *
 from wx.lib.scrolledpanel import ScrolledPanel
@@ -5,6 +7,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from qutip import Bloch
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+import matplotlib.pyplot as plt
 
 
 class BlochCanvas(wx.ScrolledWindow):
@@ -81,23 +84,20 @@ class HistoryPanel(ScrolledPanel):
 
 class CircuitInspector(wx.SplitterWindow):
 
+    ARGAND_FIGURE_ID = 0
+
     def __init__(self, parent, gate_mediator, quantum_computer):
         wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(450, 1000))
         self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
         gate_mediator.set_circuit_inspector(self)
-
         self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
         self.__probs_area = None
-
         self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
         self.__sash_pos = 800
         self.SetSashPosition(self.__sash_pos)
-
         self.__should_show = False
-
         self.Bind(wx.EVT_SIZE, self.onresize)
-
         self.__timer = wx.Timer(self.__bloch_canvas)
         self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
         self.__bind()
@@ -117,11 +117,31 @@ class CircuitInspector(wx.SplitterWindow):
         sizer.AddSpacer(20)
         self.__probs_area = wx.TextCtrl(panel, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER)
         self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
-        sizer.Add(self.__probs_area, wx.EXPAND, wx.EXPAND)
+        sizer.Add(self.__probs_area, 0, wx.EXPAND)
+        sizer.Add(self.__qubit_state_argand(panel), wx.CENTER, wx.EXPAND)
         sizer.Layout()
         panel.SetSizer(sizer)
         panel.SetupScrolling()
         return panel
+
+    def __visualize_complex(self, x):
+        plt.figure(self.ARGAND_FIGURE_ID)
+        self.__palette()
+        plt.polar([0, np.angle(x)], [0, 1], marker=',', c=[0,0,0])
+        plt.polar(np.angle(x), 1, marker=10, c=[0,0,0])
+
+    def __qubit_state_argand(self, panel):
+        fig = plt.figure(self.ARGAND_FIGURE_ID, figsize=(3., 3.))
+        self.__visualize_complex(0+0j)
+        return FigureCanvas(panel, -1, fig)
+
+    def __palette(self):
+        xval = np.arange(0, 2 * pi, 0.01)
+        N = len(xval)
+        HSV_tuples = [(x*1.0/N, 0.5, 0.5) for x in range(N)]
+        RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
+        for i, x in enumerate(xval):
+            plt.polar([0, x], [0, 1], marker=',', c=RGB_tuples[i])  # first are angles, second are rs
 
     def __bind(self):
         self.Bind(wx.EVT_SPLITTER_DCLICK, self.__dev_null)
@@ -161,3 +181,4 @@ class CircuitInspector(wx.SplitterWindow):
 
     def destroy(self):
         self.inspector = None
+
