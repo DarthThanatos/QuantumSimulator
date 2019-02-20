@@ -3,7 +3,6 @@ import wx
 from model.QuantumComputer import QuantumComputer
 from view.GateMediator import GateMediator
 from view.LoadingScreen import LoadingScreen
-from view.Inspector import Inspector
 from view.UpperMenu import UpperMenu
 from view.Editor import Editor
 import re

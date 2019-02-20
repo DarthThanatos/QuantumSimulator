@@ -1,16 +1,10 @@
-import datetime
 import traceback
-
 import wx.stc as stc
-
 import keyword
 import wx, os
-
 from util.Utils import newStandardButton, get_workspace_path
-
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-
 from wx.aui import AuiNotebook
 
 
@@ -20,11 +14,11 @@ class CodeNotebook(AuiNotebook):
         AuiNotebook.__init__(self, parent, style=wx.CLIP_CHILDREN | wx.aui.AUI_NB_CLOSE_ON_ALL_TABS)
         self.openCards = {}
         self.rootPath = rootPath
+        self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
         gate_mediator.set_code_notebook(self)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.__on_page_close)
         self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
-        self.__quantum_computer = quantum_computer
 
     def __on_destroy(self, event):
         for file, text_area in self.openCards.items():
@@ -58,12 +52,12 @@ class CodeNotebook(AuiNotebook):
                 contents = f.read()
                 ta.SetValue(contents)
 
-    def deleteTabIfExists(self, full_file_path_to_close):
+    def delete_tab_if_exists(self, full_file_path_to_close):
         file_to_close = full_file_path_to_close.split(self.rootPath)[1][1:]
         if self.openCards.__contains__(file_to_close):
-            self.__close(file_to_close, self.findPageByName(file_to_close), save=False)
+            self.__close(file_to_close, self.find_page_by_name(file_to_close), save=False)
 
-    def newTabIfNotExists(self, fileToOpen, retain_content=True):
+    def new_tab_if_not_exists(self, fileToOpen, retain_content=True):
         with open(fileToOpen, "r") as f:
             cardName = fileToOpen.split(self.rootPath)
             cardName = cardName[1][1:] # [1:] -> cutting off the first slash
@@ -72,21 +66,19 @@ class CodeNotebook(AuiNotebook):
                     ta = self.openCards[cardName]
                     ta.SetValue(f.read())
             else:
-                ta = self.newTextArea(cardName)
+                ta = self.new_text_area(cardName)
                 ta.SetValue(f.read())
                 self.openCards[cardName] = ta
                 self.AddPage(ta, cardName)
-            self.SetSelection(self.findPageByName(cardName))
+            self.SetSelection(self.find_page_by_name(cardName))
 
-    def findPageByName(self, cardName):
+    def find_page_by_name(self, cardName):
         for i in range (self.GetPageCount()):
             if self.GetPageText(i) == cardName:
                 return i
         return None
 
     def __on_text_area_focus_killed(self, event):
-        if not self:
-            return
         file_name = self.__find_name_by_text_area(event.GetEventObject())
         text_area = event.GetEventObject()
         if file_name is None:
@@ -102,16 +94,39 @@ class CodeNotebook(AuiNotebook):
             if text_area is ta:
                 return file_name
 
-    def newTextArea(self, title):
-        self.textArea = stc.StyledTextCtrl(parent=self, style=wx.TE_MULTILINE)
-        self.textArea.Bind(wx.EVT_KILL_FOCUS, self.__on_text_area_focus_killed)
+    def new_text_area(self, title):
+        text_area = stc.StyledTextCtrl(parent=self, style=wx.TE_MULTILINE)
+        text_area.Bind(wx.EVT_KILL_FOCUS, self.__on_text_area_focus_killed)
         with open("../workspace/{}".format(title), "r") as f:
-            self.textArea.SetValue(f.read())
-        self.textArea.SetLexer(stc.STC_LEX_PYTHON)
-        self.textArea.SetStyleBits(5)
-        self.textArea.SetMarginWidth(0, 20)
-        self.textArea.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-        faces = {
+            text_area.SetValue(f.read())
+        text_area.SetLexer(stc.STC_LEX_PYTHON)
+        text_area.SetStyleBits(5)
+        text_area.SetMarginWidth(0, 20)
+        text_area.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
+        text_area.SetKeyWords(0, " ".join(keyword.kwlist))
+        text_area.SetCaretForeground("BLUE")
+        return self.__text_arean_with_set_spec(text_area)
+
+    def __text_arean_with_set_spec(self, text_area):
+        faces = self.__faces()
+        text_area.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
+        text_area.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+        return text_area
+
+    def __faces(self):
+        return {
             'times': 'Times New Roman',
              'mono': 'Courier New',
              'helv': 'Arial',
@@ -119,23 +134,6 @@ class CodeNotebook(AuiNotebook):
              'size': 10,
              'size2': 8,
         }
-        self.textArea.SetKeyWords(0, " ".join(keyword.kwlist))
-        self.textArea.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
-        self.textArea.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
-        self.textArea.SetCaretForeground("BLUE")
-        return self.textArea
 
     def get_current_code_string(self):
         return self.GetCurrentPage().GetValue()
@@ -151,21 +149,18 @@ class TreeEventHandler(FileSystemEventHandler):
         self.__notebook = notebook
 
     def on_moved(self, event):
-        # print("moved", event.src_path)
-        wx.CallAfter(self.__notebook.deleteTabIfExists, event.src_path)
+        wx.CallAfter(self.__notebook.delete_tab_if_exists, event.src_path)
         wx.CallAfter(self.__tree.reset)
 
     def on_created(self, event):
-        # print("created", event.src_path)
         wx.CallAfter(self.__tree.reset)
 
     def on_modified(self, event):
         wx.CallAfter(self.__notebook.modify_content_if_tab_exists, event.src_path)
 
     def on_deleted(self, event):
-        # print("deleted", event.src_path)
         wx.CallAfter(self.__tree.reset)
-        wx.CallAfter(self.__notebook.deleteTabIfExists, event.src_path)
+        wx.CallAfter(self.__notebook.delete_tab_if_exists, event.src_path)
 
 
 class MyTree(wx.TreeCtrl):
@@ -174,20 +169,25 @@ class MyTree(wx.TreeCtrl):
         self.__collapsing = True
         self.__gate_mediator = gateMediator
         gateMediator.set_tree(self)
-        self.rootPath = rootPath
+        self.__root_path = rootPath
         self.notebook = notebook
+        self.__create_image_list()
+        self.__event_handler = TreeEventHandler(self, self.notebook)
+        self.__observer = self.__get_new_observer()
+        self.reset()
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.onFileSelected)
 
+    def __create_image_list(self):
         il = wx.ImageList(16, 16)
         self.folderidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, (16, 16)))
         self.fileidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, (16, 16)))
         self.AssignImageList(il)
-        self.__event_handler = TreeEventHandler(self, self.notebook)
-        self.__observer = Observer()
-        self.__observer.schedule(self.__event_handler, rootPath, recursive=True)
-        self.__observer.start()
 
-        self.reset()
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.onFileSelected)
+    def __get_new_observer(self):
+        observer = Observer()
+        observer.schedule(self.__event_handler, self.__root_path, recursive=True)
+        observer.start()
+        return observer
 
     def stop_observer(self):
         self.__observer.stop()
@@ -195,19 +195,21 @@ class MyTree(wx.TreeCtrl):
 
     def reset(self):
         self.Freeze()
-        rootPath = self.rootPath
         self.DeleteAllItems()
+        self.__walk_sys_tree()
+        self.ExpandAll()
+        self.Thaw()
+
+    def __walk_sys_tree(self):
+        rootPath = self.__root_path
         ids = {rootPath: self.AddRoot(rootPath, self.folderidx)}
         for (dirpath, dirnames, filenames) in os.walk(rootPath):
             for dirname in sorted(dirnames):
                 fullpath = os.path.join(dirpath, dirname)
                 ids[fullpath] = self.AppendItem(ids[dirpath], dirname, self.folderidx)
-
             for filename in sorted(filenames):
                 self.AppendItem(ids[dirpath], filename, self.fileidx)
         self.SetItemHasChildren(ids[rootPath])
-        self.ExpandAll()
-        self.Thaw()
 
     def onFileSelected(self, event):
         parent = self.GetItemParent(event.GetItem())
@@ -215,8 +217,8 @@ class MyTree(wx.TreeCtrl):
         while parent.GetID() is not None:
             parts.insert(0, self.GetItemText(parent))
             parent = self.GetItemParent(parent)
-        fileToOpen = "\\".join(parts)
-        self.notebook.newTabIfNotExists(fileToOpen, retain_content=False)
+        file_to_open = "\\".join(parts)
+        self.notebook.new_tab_if_not_exists(file_to_open, retain_content=False)
 
 
 class Notepad(wx.SplitterWindow):
@@ -276,7 +278,7 @@ class Notepad(wx.SplitterWindow):
 
     def __generate(self, event):
         with open(self.__new_file_name, 'w+'):
-            self.__notebook.newTabIfNotExists(self.__new_file_name, retain_content=False)
+            self.__notebook.new_tab_if_not_exists(self.__new_file_name, retain_content=False)
 
     def __run_in_console(self, event):
         self.__gate_mediator.run_in_console(self.__quantum_computer)
@@ -286,7 +288,7 @@ class Notepad(wx.SplitterWindow):
 
     def __new_notebook(self, splitter):
         self.__notebook = CodeNotebook(splitter, self.workspacePath, self.__gate_mediator, self.__quantum_computer)
-        self.__notebook.newTabIfNotExists("{}/hadamard.py".format(self.workspacePath), retain_content=False)
+        self.__notebook.new_tab_if_not_exists("{}/hadamard.py".format(self.workspacePath), retain_content=False)
         return self.__notebook
 
     def __new_console_panel(self, splitter):
@@ -317,7 +319,6 @@ class Notepad(wx.SplitterWindow):
         fileTreeSizer.AddGrowableRow(1)
         panel.SetSizer(fileTreeSizer)
         return panel
-
 
     def newDirTree(self, parent):
         dirTree = MyTree(parent, self.workspacePath, self.__notebook, self.__gate_mediator)

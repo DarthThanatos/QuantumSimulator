@@ -79,7 +79,7 @@ class GateMediator:
     def generate_code(self, quantum_computer, file_name):
         quantum_computer.generate_current_circuit_code(file_name)
         self.__editor.switch_to_notepad_view()
-        self.__code_notebook.newTabIfNotExists(file_name, retain_content=False)
+        self.__code_notebook.new_tab_if_not_exists(file_name, retain_content=False)
 
     def window_closing(self):
         self.__tree.stop_observer()
