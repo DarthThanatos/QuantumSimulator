@@ -37,3 +37,7 @@ class CPhaseKick(Gate):
             step, controls, self.target(),
             self._parameters[self._K]
         )
+
+    @staticmethod
+    def stringified_parameters_from(k):
+        return {CPhaseKick._K: str(k)}

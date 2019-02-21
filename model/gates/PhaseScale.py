@@ -33,3 +33,7 @@ class PhaseScaleGate(Gate):
             step, controls, self.target(),
             self._parameters[self.PHASE_ANGLE]
         )
+
+    @staticmethod
+    def stringified_parameters_from(angle):
+        return {PhaseScaleGate.PHASE_ANGLE: str(angle)}

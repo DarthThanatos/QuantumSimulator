@@ -13,3 +13,7 @@ class RotationZGate(Rotation):
 
     def _get_axis(self):
         return Z
+
+    @staticmethod
+    def axis():
+        return Z

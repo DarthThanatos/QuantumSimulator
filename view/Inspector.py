@@ -124,16 +124,16 @@ class CircuitInspector(wx.SplitterWindow):
         panel.SetupScrolling()
         return panel
 
+    def __qubit_state_argand(self, panel):
+        fig = plt.figure(self.ARGAND_FIGURE_ID, figsize=(3., 3.))
+        self.__visualize_complex(0+0j)
+        return FigureCanvas(panel, -1, fig)
+
     def __visualize_complex(self, x):
         plt.figure(self.ARGAND_FIGURE_ID)
         self.__palette()
         plt.polar([0, np.angle(x)], [0, 1], marker=',', c=[0,0,0])
         plt.polar(np.angle(x), 1, marker=10, c=[0,0,0])
-
-    def __qubit_state_argand(self, panel):
-        fig = plt.figure(self.ARGAND_FIGURE_ID, figsize=(3., 3.))
-        self.__visualize_complex(0+0j)
-        return FigureCanvas(panel, -1, fig)
 
     def __palette(self):
         xval = np.arange(0, 2 * pi, 0.01)

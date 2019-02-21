@@ -13,6 +13,9 @@ class QuantumComputer:
         self.__code_processor = CodeProcessor()
         self.__experiment_history = ExperimentHistory(self, self.__circuit)
 
+    def step_already_simulated(self, step):
+        return self.__circuit.step_already_simulated(step)
+
     def generate_current_circuit_code(self, file_name):
         return self.__code_processor.generate_current_circuit_code(self.__circuit, file_name)
 

@@ -1,5 +1,6 @@
 import wx
 
+from util.Utils import mouse_to_grid_coordinates
 from view.new_circuit.constants import GATE_H_SPACE, GATE_SIZE
 
 
@@ -15,7 +16,7 @@ class MultiqbitGatePlacer:
     def __on_slot_selected(self, m_x, m_y, callback):
         if self.circuit.getW() > m_x > 2 * GATE_SIZE:
             if self.circuit.getH(qbitAreaOnly=True) > m_y > 0:
-                i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
+                i,j = mouse_to_grid_coordinates(m_x, m_y)
                 callback(i, j)
 
     def place_control_bit(self, m_x, m_y, filled_slots):
@@ -51,7 +52,7 @@ class MultiqbitGatePlacer:
 
     def draw_control_line(self, dc):
         if not self.controlPlaced: return
-        ctrl_x, ctrl_y = self.circuit.ij_to_xy(*self.controlIJ)
+        ctrl_x, ctrl_y = self.circuit.ij_to_slot_center_xy(*self.controlIJ)
         self.__draw_control_line_from_to(dc, ctrl_x, ctrl_y, self.m_y)
 
     def __draw_control_line_from_to(self, dc, ctrl_x, ctrl_y, target_y):
@@ -63,6 +64,6 @@ class MultiqbitGatePlacer:
     def draw_multiqubit_gates(self, dc, multiqubit_gates):
         # multiqubit_gates: {(ctrl1, j1) -> (name_1, target_i_1), (ctrl2, j2) -> (name_2, target_i_2)...}
         for (i_ctrl,j), (_, i_target) in multiqubit_gates.items():
-            ctrl_x, ctrl_y = self.circuit.ij_to_xy(i_ctrl, j)
-            _, target_y = self.circuit.ij_to_xy(i_target, j)
+            ctrl_x, ctrl_y = self.circuit.ij_to_slot_center_xy(i_ctrl, j)
+            _, target_y = self.circuit.ij_to_slot_center_xy(i_target, j)
             self.__draw_control_line_from_to(dc, ctrl_x, ctrl_y, target_y)

@@ -2,7 +2,7 @@ import wx
 import wx.lib.newevent
 from view.new_circuit.constants import *
 
-from util.Utils import get_screen_middle_point, flatten_dicts
+from util.Utils import get_screen_middle_point, flatten_dicts, mouse_to_grid_coordinates
 
 ParameterChangedEvent, EVT_PARAM_CHANGED = wx.lib.newevent.NewEvent()
 
@@ -191,7 +191,7 @@ class GatePlacer:
     def placeGate(self, m_x, m_y):
         if self.__circuit.getW() > m_x > 2 * GATE_SIZE:
             if self.__circuit.getH(qbitAreaOnly=True) > m_y > 0:
-                i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
+                i,j = mouse_to_grid_coordinates(m_x, m_y)
                 if self.__quantum_computer.can_add_gate_at(i, j):
                     self.__query_gate_parameters(self.__circuit.gateName, i, j)
         self.__gate_mediator.gateUnselected()

@@ -1,6 +1,6 @@
 import wx
 
-from util.Utils import euclDist
+from util.Utils import euclDist, mouse_to_grid_coordinates
 from view.new_circuit.constants import *
 
 class GateDragger:
@@ -58,7 +58,7 @@ class GateDragger:
 
 
     def swapSlotsIfPossible(self, m_x, m_y):
-        i,j = int(m_y / GATE_SIZE), int(m_x / (GATE_SIZE + GATE_H_SPACE))
+        i,j = mouse_to_grid_coordinates(m_x, m_y)
         if not self.quantumComputer.can_add_gate_at(i, j):
             return
         removed_gate = self.quantumComputer.remove_gate(*self.draggedGateTile.ij)

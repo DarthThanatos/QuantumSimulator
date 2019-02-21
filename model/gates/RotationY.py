@@ -13,3 +13,7 @@ class RotationYGate(Rotation):
 
     def _get_axis(self):
         return Y
+
+    @staticmethod
+    def axis():
+        return Y

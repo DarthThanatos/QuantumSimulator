@@ -13,3 +13,7 @@ class RotationXGate(Rotation):
 
     def _get_axis(self):
         return X
+
+    @staticmethod
+    def axis():
+        return X

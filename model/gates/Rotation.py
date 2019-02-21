@@ -10,6 +10,14 @@ class Rotation(Gate):
         param_name = self._get_parameter_name()
         return [param_name]
 
+    @staticmethod
+    def get_parameter_name(axis):
+        return Rotation.PARAM_NAME.format(axis)
+
+    @staticmethod
+    def stringified_parameters_from(angle, axis):
+        return {Rotation.get_parameter_name(axis): str(angle)}
+
     def _get_parameter_name(self):
         return self.PARAM_NAME.format(self._get_axis())
 

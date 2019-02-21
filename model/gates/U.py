@@ -2,6 +2,7 @@ from qutip import Qobj
 import numpy as np
 from model.gates.Gate import Gate
 from model.constants import *
+from util.Utils import is_iterable
 
 
 class UGate(Gate):
@@ -15,7 +16,7 @@ class UGate(Gate):
         return U
 
     def get_parameters_names(self):
-        return ["m[0][0]", "m[0][1]", "m[1][0]", "m[1][1]"]
+        return UGate.parameters_names()
 
     def _get_parameters_types(self):
         return self.__types_dict
@@ -62,3 +63,17 @@ class UGate(Gate):
             step, controls, self.target(),
             e_0, e_1, e_2, e_3
         )
+
+    @staticmethod
+    def parameters_names():
+        return ["m[0][0]", "m[0][1]", "m[1][0]", "m[1][1]"]
+
+    @staticmethod
+    def stringified_parameters_from(matrix):
+        if not is_iterable(matrix) or len(list(matrix)) != 4:
+            raise Exception("matrix should be an iterable of exactly 4 elements")
+        parameters_names = UGate.parameters_names()
+        parameters = {}
+        for i, param_name in enumerate(parameters_names):
+            parameters[param_name] = str(matrix[i])
+        return parameters

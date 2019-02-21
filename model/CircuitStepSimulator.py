@@ -21,6 +21,12 @@ class CircuitStepSimulator:
         self.__quantum_computer = quantum_computer
         self.__current_psi = None
 
+    def step_already_simulated(self, step):
+        return step <= self.__step
+
+    def set_current_psi(self, current_psi):
+        self.__current_psi = current_psi
+
     def current_simulation_psi(self):
         return self.__current_psi
 

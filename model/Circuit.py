@@ -18,6 +18,10 @@ class Register:
         bin_truncated = list(map(lambda x: int(x), bin(value)[2:]))
         return [0 for i in range(self.nqubits - bin_truncated.__len__())] + bin_truncated
 
+    def value_to_ket(self, value):
+        bin_truncated = list(map(lambda x: int(x), bin(value)[2:]))
+        return ket(bin_truncated)
+
     def bit_list_to_string_value(self, bitList):
         return "".join(map(lambda x: str(x), bitList))
 
@@ -52,6 +56,19 @@ class Circuit:
         self.__multi_gates = {}
         # ^ dict of dicts { j -> { (ctrl1, ctrl2 ...) -> gate } }, where name is a simple target gate name,
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
+
+    def init_register(self, nqubits, value):
+        self.__register = Register(nqbits=nqubits, value=value)
+        self.__step_simulator = CircuitStepSimulator(self)
+        self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
+        self.__multi_gates = {}
+
+    def set_to(self, value):
+        ket_value = self.__register.value_to_ket(value)
+        self.__step_simulator.set_current_psi(ket_value)
+
+    def step_already_simulated(self, step):
+        return self.__step_simulator.step_already_simulated(step)
 
     def initial_int_value(self):
         return self.__register.value

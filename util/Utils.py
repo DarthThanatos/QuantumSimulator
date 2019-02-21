@@ -5,11 +5,15 @@ from win32api import GetSystemMetrics
 
 import re
 import os
+
+import sys
 import wx
 
 from functools import reduce
 import numpy as np
 
+
+from view.new_circuit.constants import *
 
 def AddToolButtonBmpIS(frame, toolbar, path, hint, triggermeth, toggleBmp ='', type=wx.BITMAP_TYPE_PNG):
     if toggleBmp:
@@ -100,9 +104,23 @@ def new_big_font_label(parent, label):
     label.SetFont(font)
     return label
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 def get_workspace_path():
     cwd = os.getcwd()
     C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
     workspacePath = C_root + subdir + "workspace"
     return workspacePath
+
+def mouse_to_grid_coordinates(m_x, m_y):
+    i = int(m_y / GATE_SIZE)
+    j = int((m_x - GRID_OFFSET * GATE_SIZE) / (GATE_SIZE + GATE_H_SPACE))
+    return i, j
+
+def is_iterable(arg):
+    try:
+        iter(arg)
+        return True
+    except TypeError:
+        return False
