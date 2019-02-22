@@ -1,8 +1,8 @@
 import wx
 import wx.lib.newevent
-from view.new_circuit.constants import *
 
 from util.Utils import get_screen_middle_point, flatten_dicts, mouse_to_grid_coordinates
+from view.constants import *
 
 ParameterChangedEvent, EVT_PARAM_CHANGED = wx.lib.newevent.NewEvent()
 

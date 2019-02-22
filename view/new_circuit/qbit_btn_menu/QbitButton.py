@@ -1,6 +1,8 @@
 import wx
-from view.new_circuit.constants import *
+
 from util.Utils import newScaledImgBitmap
+from view.constants import *
+
 
 class QbitButton(wx.Button):
     def __init__(self, parent,  index, qbitMenu, gate_mediator, quantumComputer):

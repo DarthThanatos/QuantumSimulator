@@ -1,7 +1,8 @@
 import wx
 
 from util.Utils import euclDist, mouse_to_grid_coordinates
-from view.new_circuit.constants import *
+from view.constants import *
+
 
 class GateDragger:
 

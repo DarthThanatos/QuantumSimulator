@@ -84,7 +84,6 @@ class HistoryPanel(ScrolledPanel):
 
 class CircuitInspector(wx.SplitterWindow):
 
-    ARGAND_FIGURE_ID = 0
 
     def __init__(self, parent, gate_mediator, quantum_computer):
         wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(450, 1000))
@@ -125,12 +124,12 @@ class CircuitInspector(wx.SplitterWindow):
         return panel
 
     def __qubit_state_argand(self, panel):
-        fig = plt.figure(self.ARGAND_FIGURE_ID, figsize=(3., 3.))
+        fig = plt.figure(ARGAND_FIGURE_ID, figsize=(3., 3.))
         self.__visualize_complex(0+0j)
         return FigureCanvas(panel, -1, fig)
 
     def __visualize_complex(self, x):
-        plt.figure(self.ARGAND_FIGURE_ID)
+        plt.figure(ARGAND_FIGURE_ID)
         self.__palette()
         plt.polar([0, np.angle(x)], [0, 1], marker=',', c=[0,0,0])
         plt.polar(np.angle(x), 1, marker=10, c=[0,0,0])

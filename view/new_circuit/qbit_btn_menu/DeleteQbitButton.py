@@ -1,6 +1,8 @@
 import wx
-from view.new_circuit.constants import *
+
 from util.Utils import newScaledImgBitmap
+from view.constants import *
+
 
 class DeleteQbitButton(wx.Button):
 

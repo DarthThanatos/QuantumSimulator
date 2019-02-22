@@ -1,15 +1,14 @@
 import wx
-
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from util.Utils import newIconButton, mouse_to_grid_coordinates
 from view.Inspector import CircuitInspector
+from view.SchodringerExperimentPanel import SchodringerExperimentPanel
+from view.constants import *
 from view.new_circuit.GateDragger import GateDragger
 from view.new_circuit.GatePlacer import GatePlacer
 from view.new_circuit.MultiqbitGatePlacer import MultiqbitGatePlacer
 from view.new_circuit.SingleGateTile import SingleGateTile
-
-from view.new_circuit.constants import *
 from view.new_circuit.qbit_btn_menu.DeleteQbitButton import DeleteQbitButton
 from view.new_circuit.qbit_btn_menu.QbitButton import QbitButton
 from view.new_circuit.qbit_btn_menu.QbitMenu import QbitMenu
@@ -300,15 +299,28 @@ class CircuitStd(wx.Panel):
     def circuit_view(self):
         return self.__circuit_panel
 
+class CircuitSplitter(wx.SplitterWindow):
+    def __init__(self, parent, gate_mediator, quantum_computer):
+        wx.SplitterWindow.__init__(self, parent)
+        self.__gate_mediator = gate_mediator
+        self.__quantum_computer = quantum_computer
+        self.__circuit = CircuitStd(self, gate_mediator, quantum_computer)
+        self.__schodringer_panel = SchodringerExperimentPanel(self, gate_mediator, quantum_computer)
+        self.SplitHorizontally(self.__circuit, self.__schodringer_panel,200)
+        self.SetBackgroundColour(wx.WHITE)
+
+    def circuit_view(self):
+        return self.__circuit.circuit_view()
+
 class CircuitStd_(wx.Panel):
 
     def __init__(self, parent, gate_mediator, quantum_computer):
         wx.Panel.__init__(self, parent)
         root_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.__inspector = CircuitInspector(parent=self, gate_mediator=gate_mediator, quantum_computer=quantum_computer)
-        self.__circuit = CircuitStd(self, gate_mediator, quantum_computer)
+        self.__circuit = CircuitSplitter(self, gate_mediator, quantum_computer)
         root_sizer.Add(self.__inspector)
-        root_sizer.Add(self.__circuit)
+        root_sizer.Add(self.__circuit, wx.EXPAND, wx.EXPAND)
         self.SetSizer(root_sizer)
 
     def circuit_view(self):

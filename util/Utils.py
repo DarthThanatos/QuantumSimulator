@@ -1,19 +1,16 @@
-from math import sqrt
-
 import functools
+import os
+import re
+import sys
+from functools import reduce
+from math import sqrt
 from win32api import GetSystemMetrics
 
-import re
-import os
-
-import sys
+import numpy as np
 import wx
 
-from functools import reduce
-import numpy as np
+from view.constants import *
 
-
-from view.new_circuit.constants import *
 
 def AddToolButtonBmpIS(frame, toolbar, path, hint, triggermeth, toggleBmp ='', type=wx.BITMAP_TYPE_PNG):
     if toggleBmp:
@@ -98,8 +95,8 @@ def print_register_state(psi, nqubits):
         print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
     print("="*20)
 
-def new_big_font_label(parent, label):
-    label = wx.StaticText(parent, label=label, style=wx.ALIGN_CENTRE)
+def new_big_font_label(parent, label_txt):
+    label = wx.StaticText(parent, label=label_txt, style=wx.ALIGN_CENTRE)
     font = wx.Font(18, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.NORMAL)
     label.SetFont(font)
     return label

@@ -1,6 +1,8 @@
-from view.new_circuit.constants import *
 import wx
+
 from util.Utils import newScaledImgBitmap
+from view.constants import *
+
 
 class SingleGateTile:
     def __init__(self, i, j, gateName):

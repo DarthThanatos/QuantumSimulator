@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import *
 
-ket0 = basis(2,0).unit( )                
+ket0 = basis(2,0).unit()
 ket1 = basis(2,1).unit()                
 psip = (basis(2,0)+basis(2,1)*1j).unit() 
 psim = (basis(2,0)-basis(2,1)*1j).unit() 
@@ -56,10 +56,10 @@ def qwalk_gen(t,qubit_state,coin_angle):
   U_hat = walk(t,coin_angle)
   for i in range(t):                               
     Psi = U_hat*Psi*U_hat.dag()
-  return Psi                                       
+  return Psi
 
 
 if __name__ == "__main__":           
   Psi_t = qwalk_gen(100,psip,45)     
   P_p  = measurement(100,Psi_t,2)    
-  plot_pdf(P_p)                     
+  plot_pdf(P_p)

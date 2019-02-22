@@ -1,7 +1,7 @@
 import wx
 
 from util.Utils import mouse_to_grid_coordinates
-from view.new_circuit.constants import GATE_H_SPACE, GATE_SIZE
+from view.constants import GATE_SIZE
 
 
 class MultiqbitGatePlacer:

@@ -1,6 +1,7 @@
 import wx
+
 from util.Utils import newScaledImgBitmap
-from view.new_circuit.constants import *
+from view.constants import *
 
 
 class SimulActionPanel(wx.Panel):
