@@ -5,6 +5,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from qutip import Bloch
 import matplotlib.pyplot as plt
+
+from model.constants import MASTERS_EQUATIONS, MONTE_CARLO
 from util.Utils import new_big_font_label, newScaledImgBitmap
 from view.constants import SCHODRINGER_EXPECTATIONS_FIGURE_ID
 import numpy as np
@@ -142,7 +144,8 @@ class SchodringerExperimentPanel(wx.Panel):
 
     def __new_parameters_panel(self):
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.__new_simulation_choice())
+        choices = [MASTERS_EQUATIONS, MONTE_CARLO]
+        sizer.Add(self.__new_simulation_choice(), choices=choices)
         sizer.Add(wx.CheckBox(self, label="X expectation"))
         sizer.Add(wx.CheckBox(self, label="Y expectation"))
         sizer.Add(wx.CheckBox(self, label="Z expectation"))

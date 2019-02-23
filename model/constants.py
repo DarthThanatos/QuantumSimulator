@@ -18,3 +18,6 @@ INV_C_PHASE_KICK = "inv_cphase"
 IDENTITY = "identity"
 QUANTUM_INSTANCE = "quantum_instance"
 CONTROLLED = "controlled"
+
+MASTERS_EQUATIONS = "masters equations"
+MONTE_CARLO = "monte carlo"
