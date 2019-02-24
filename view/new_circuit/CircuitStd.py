@@ -306,8 +306,19 @@ class CircuitSplitter(wx.SplitterWindow):
         self.__quantum_computer = quantum_computer
         self.__circuit = CircuitStd(self, gate_mediator, quantum_computer)
         self.__schodringer_panel = SchodringerExperimentPanel(self, gate_mediator, quantum_computer)
-        self.SplitHorizontally(self.__circuit, self.__schodringer_panel,200)
+        self.SplitHorizontally(self.__circuit, self.__schodringer_panel,800)
         self.SetBackgroundColour(wx.WHITE)
+        self.__bind()
+
+    def __bind(self):
+        self.Bind(wx.EVT_SPLITTER_DCLICK, self.__dev_null)
+        self.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.__dev_null)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.__dev_null)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.__dev_null)
+        self.Bind(wx.EVT_SPLITTER_UNSPLIT, self.__dev_null)
+
+    def __dev_null(self, event):
+        event.Veto()
 
     def circuit_view(self):
         return self.__circuit.circuit_view()

@@ -9,9 +9,18 @@ import numpy as np
 class QuantumComputer:
 
     def __init__(self, nqbits):
-        self.__circuit = Circuit(nqbits)
-        self.__code_processor = CodeProcessor()
+        self.__circuit = Circuit(self, nqbits)
+        self.__code_processor = CodeProcessor(self)
         self.__experiment_history = ExperimentHistory(self, self.__circuit)
+
+    def get_current_schodringer_experiment(self):
+        return self.__experiment_history.get_current_schodringer_experiment()
+
+    def add_schodringer_experiment_if_not_exists(self):
+        self.__experiment_history.add_schodringer_experiment_if_not_exists()
+
+    def remove_schodringer_experiment_if_exists(self):
+        self.__experiment_history.remove_schodringer_experiment_if_exists()
 
     def step_already_simulated(self, step):
         return self.__circuit.step_already_simulated(step)

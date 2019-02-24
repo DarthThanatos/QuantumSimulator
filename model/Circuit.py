@@ -48,7 +48,8 @@ class Register:
 
 class Circuit:
 
-    def __init__(self, nqbits):
+    def __init__(self, quantum_computer, nqbits):
+        self.__quantum_computer = quantum_computer
         self.__register = Register(nqbits=nqbits)
         self.__gate_creator = GateCreator()
         self.__step_simulator = CircuitStepSimulator(self)
@@ -125,12 +126,24 @@ class Circuit:
     def swap_qbit_value_at(self, i):
         self.__register.swap_bit_at(i)
 
+    def add_qbit(self):
+        self.__register = self.__register_with_added_qbit()
+        self.__update_schodringer_experiments()
+
     def remove_qbit(self, i):
         if self.__grid.__contains__(i):
             self.__grid.__delitem__(i)
         self.__shift_grid(i)
         self.__register = self.__register_with_removed_qbit(i)
         self.__multi_gates = self.__multi_qbit_gates_after_qbit_removed(i)
+        self.__update_schodringer_experiments()
+
+    def __update_schodringer_experiments(self):
+        # check if can add schodringer experiment working only with one qubit
+        if self.__register.nqubits == 1:
+            self.__quantum_computer.add_schodringer_experiment_if_not_exists()
+        else:
+            self.__quantum_computer.remove_schodringer_experiment_if_exists()
 
     def __multi_qbit_gates_after_qbit_removed(self, i):
         new_multi_gates_dict = {}
@@ -149,9 +162,6 @@ class Circuit:
             if new_multi_gates_dict[j].items().__len__() == 0:
                 new_multi_gates_dict.__delitem__(j)
         return new_multi_gates_dict
-
-    def add_qbit(self):
-        self.__register = self.__register_with_added_qbit()
 
     def __shift_grid(self, i):
         indecies_bigger_than_i = list(filter(lambda x: x > i, self.__grid.keys()))

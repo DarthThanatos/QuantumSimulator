@@ -6,20 +6,16 @@ from math import cos, sin, radians
 import numpy as np
 
 if __name__ == '__main__':
-    H = 2 * np.pi  * sigmax()
-    psi0 = ket("0")
+    # H = 2 * np.pi  * sigmax()
+    # psi0 = ket("0")
     times = np.linspace(0., 10., 20)
-    res = mcsolve(H, psi0, times, [destroy(2)], [sigmaz(), sigmay()], map_func=parallel_map)
-    print(res.expect)
-    # print(res.col_times)
-    # print("---")
-    # print(res.col_which)
-    fig, ax = subplots()
-    ax.plot(res.times, res.expect[0])
-    ax.plot(res.times, res.expect[1])
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Expectation values')
-    ax.legend(["Sigma-Z", "Sigma-Y"])
+    # res = mcsolve(H, psi0, times, [destroy(2)], [sigmaz(), sigmay()], map_func=serial_map, options=qutip.Options(store_states=True))
+    # fig, ax = subplots()
+    # ax.plot(res.times, res.expect[0])
+    # ax.plot(res.times, res.expect[1])
+    # ax.set_xlabel('Time')
+    # ax.set_ylabel('Expectation values')
+    # ax.legend(["Sigma-Z", "Sigma-Y"])
 
     def normalize(vec):
         norm = np.sqrt((vec.dag() * vec)[0,0])
@@ -48,8 +44,9 @@ if __name__ == '__main__':
         return res
 
     def getEvolution(H, psi0, times):
-        res = mcsolve(H, psi0, times, [], [])
+        res = mcsolve(H, psi0, times, [destroy(2)], [], options=qutip.Options(average_states=True))
         res = res.states
+
         # res = custom_mcsolve(H, psi0, times)
         return res
 

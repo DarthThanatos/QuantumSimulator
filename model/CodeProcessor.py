@@ -9,11 +9,14 @@ import traceback
 
 class CodeProcessor:
 
+    def __init__(self, quantum_computer):
+        self.__quantum_computer = quantum_computer
+
     def run_code(self, code_string, file_name, for_simulation):
         # create file-like string to capture output
         codeOut = StringIO()
         codeErr = StringIO()
-        circuit = Circuit(1)
+        circuit = Circuit(self.__quantum_computer, nqbits=1)
         quantum_instance = QuantumInstance(for_simulation, circuit)
         safe_list = ['quantum_instance']
         current_locals = locals() # must be here, not in generator function, as locals are different there

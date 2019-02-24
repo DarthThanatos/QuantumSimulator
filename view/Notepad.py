@@ -284,7 +284,7 @@ class Notepad(wx.SplitterWindow):
         self.__gate_mediator.run_in_console(self.__quantum_computer)
 
     def __build_circuit(self, event):
-        self.__gate_mediator.build_circuit(self.__quantum_computer)
+        self.__gate_mediator.build_circuit_from_code(self.__quantum_computer)
 
     def __new_notebook(self, splitter):
         self.__notebook = CodeNotebook(splitter, self.workspacePath, self.__gate_mediator, self.__quantum_computer)
