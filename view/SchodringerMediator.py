@@ -2,11 +2,11 @@ import time
 from threading import Thread
 
 import wx
-from qutip import sigmax, sigmay, sigmaz
+from qutip.ui import BaseProgressBar
 
 SHOULD_CONTINUE = 0
 
-def evolve(bloch_evolution_sphere, states, sentinel):
+def evolve(bloch_evolution_sphere, graph_panel, states, expectations, sentinel, steps, for_x, for_y, for_z):
 
         def update_bloch(xs_, ys_, zs_, state):
             bloch_evolution_sphere.clear()
@@ -21,7 +21,7 @@ def evolve(bloch_evolution_sphere, states, sentinel):
         zs = []
 
         while sentinel[SHOULD_CONTINUE]:
-            if i == len(states):
+            if i == steps:
                 i = 0
                 # xs = []
                 # ys = []
@@ -33,16 +33,36 @@ def evolve(bloch_evolution_sphere, states, sentinel):
                 # ys.append(float((st.dag() * sigmay() * st).data[0,0]))
                 # zs.append(float((st.dag() * sigmaz() * st).data[0,0]))
                 # wx.CallAfter(update_bloch, xs, ys, zs, states[i])
+                wx.CallAfter(graph_panel.plot, expectations, steps, i, show_x=for_x, show_y=for_y, show_z=for_z)
             except Exception as e:
                 print(e)
             i+=1
-            time.sleep(.05)
-        print("out")
+            time.sleep(.5)
+
+
+class SchodringerProgressBar(BaseProgressBar):
+
+    def __init__(self, progress_bar):
+        BaseProgressBar.__init__(self)
+        self.progress_bar = progress_bar
+
+    def update(self, n):
+        p = (n / self.N) * 100.0
+        if p >= self.p_chunk:
+            self.p_chunk += self.p_chunk_size
+            wx.CallAfter(self.progress_bar.SetValue, int(p))
+
+    def __print(self, p):
+        print("%4.1f%%." % p +
+              " Run time: %s." % self.time_elapsed() +
+              " Est. time left: %s" % self.time_remaining_est(p))
+
 
 class SchodringerMediator:
 
     def __init__(self, quantum_computer):
         self.__quantum_computer = quantum_computer
+        self.__progress_bar = None
         self.__steps_ctrl = None
         self.__schodringer_panel = None
         self.__x_checkbox = None
@@ -56,10 +76,18 @@ class SchodringerMediator:
         self.__bloch_evolution = None
         self.__graph_panel = None
         self.__psi_panel = None
+        self.__gate_mediator = None
         self.__simulation_on = False
         self.__schodringer_experiment = None
         self.__evolution_thread = None
+        self.__loading_thread = None
         self.__sentinel = {SHOULD_CONTINUE: True}
+
+    def set_progress_bar(self, progress_bar):
+        self.__progress_bar = SchodringerProgressBar(progress_bar)
+
+    def set_gate_mediator(self, gate_mediator):
+        self.__gate_mediator= gate_mediator
 
     def set_steps_ctrl(self, steps_ctrl):
         self.__steps_ctrl = steps_ctrl
@@ -113,12 +141,17 @@ class SchodringerMediator:
     def __start_simul(self):
         self.__bulk_enable(enabled=False)
         self.__simulation_button.SetLabel("Stop Simulation")
+        self.__gate_mediator.schodringer_mode_changed(started=True)
         self.__sentinel[SHOULD_CONTINUE] = True
-        states, expectations = self.__get_solution()
-        self.__evolution_thread = Thread(target=evolve,  args=(self.__bloch_evolution, [], self.__sentinel))
-        self.__evolution_thread.start()
+        self.__simulation_button.Enable(False)
 
-    def __get_solution(self):
+        def load_experiment():
+            self.__load_solution()
+
+        self.__loading_thread = Thread(target=load_experiment, daemon=True)
+        self.__loading_thread.start()
+
+    def __load_solution(self):
         method = self.__method_choice.GetString(self.__method_choice.GetSelection())
         tunneling_coef = self.__coefficient_input.get_coefficient()
         steps = self.__steps_ctrl.GetValue()
@@ -126,13 +159,36 @@ class SchodringerMediator:
         for_y = self.__y_checkbox.IsChecked()
         for_z = self.__z_checkbox.IsChecked()
         destroy = self.__destroy_checkbox.IsChecked()
-        return self.__schodringer_experiment.solve(method, tunneling_coef, steps, for_x, for_y, for_z, destroy)
+        self.__progress_bar.progress_bar.SetValue(0)
+        self.__schodringer_panel.show_progress(True)
+        psi, expectations = self.__schodringer_experiment.solve(method, tunneling_coef, steps, for_x, for_y, for_z, destroy, self.__progress_bar)
+        self.__visualize_solution(psi, expectations, steps, for_x, for_y, for_z)
+        self.__schodringer_panel.show_progress(False)
+
+    def __visualize_solution(self, psi, expectations, steps, for_x, for_y, for_z):
+        self.__evolution_thread = Thread(
+            target=evolve,
+            daemon=True,
+            args=(
+                self.__bloch_evolution,
+                self.__graph_panel,
+                psi,
+                expectations,
+                self.__sentinel,
+                steps,
+                for_x, for_y, for_z
+            )
+        )
+        self.__evolution_thread.start()
+        self.__simulation_button.Enable(True)
 
     def __end_simul(self):
         self.__bulk_enable(enabled=True)
         self.__simulation_button.SetLabel("Start Simulation")
         self.__sentinel[SHOULD_CONTINUE] = False
         self.__evolution_thread.join()
+        self.__graph_panel.clean()
+        self.__gate_mediator.schodringer_mode_changed(started=False)
 
     def __bulk_enable(self, enabled):
         self.__x_checkbox.Enable(enabled)

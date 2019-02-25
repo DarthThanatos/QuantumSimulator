@@ -225,6 +225,7 @@ class Notepad(wx.SplitterWindow):
     def __init__(self, parent, gate_mediator, quantum_computer):
         wx.SplitterWindow.__init__(self, parent, wx.NewId(), style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         self.__gate_mediator = gate_mediator
+        gate_mediator.set_notebook_frame(self)
         self.__gate_mediator.set_notepad(self)
         self.__quantum_computer = quantum_computer
         self.__console = None

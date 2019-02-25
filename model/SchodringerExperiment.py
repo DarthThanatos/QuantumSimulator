@@ -20,19 +20,19 @@ class SchodringerExperiment:
     def get_psi0(self):
         return self.__circuit.initial_int_value()
 
-    def __solve(self, method, tunneling_coef, e_ops, steps, should_destroy):
+    def __solve(self, method, tunneling_coef, e_ops, steps, should_destroy, progress_bar):
         H = self.get_hamiltonian(tunneling_coef)
         c_op = destroy(2) if should_destroy else None
         psi0 = ket(str(self.get_psi0()))
         times = np.linspace(0., 10., steps)
         if method == MONTE_CARLO:
-            return mc_solve(H, psi0, times, c_op, e_ops)
+            return mc_solve(H, psi0, times, c_op, e_ops, progress_bar)
         elif method == MASTERS_EQUATIONS:
-            res = mesolve(H, psi0, times, [c_op], e_ops, options=qutip.Options(store_states=True))
+            res = mesolve(H, psi0, times, [c_op], e_ops, options=qutip.Options(store_states=True), progress_bar=progress_bar)
             return (res.states, res.expect)
 
     def solve(self, method=MONTE_CARLO, tunneling_coef=1, steps=20, for_x=True, for_y=True,
-                                     for_z=True, destroy=False):
+                                     for_z=True, destroy=False, progress_bar = None):
         e_ops = []
         if for_x:
             e_ops.append(sigmax())
@@ -40,5 +40,5 @@ class SchodringerExperiment:
             e_ops.append(sigmay())
         if for_z:
             e_ops.append(sigmaz())
-        return self.__solve(method, tunneling_coef, e_ops, steps, destroy)
+        return self.__solve(method, tunneling_coef, e_ops, steps, destroy, progress_bar)
 

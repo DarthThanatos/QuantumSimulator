@@ -232,6 +232,7 @@ class CircuitStd(wx.Panel):
     def __init__(self, parent, gateMediator, quantum_computer):
         wx.Panel.__init__(self, parent)
         self.__gate_mediator = gateMediator
+        gateMediator.set_circuit_frame(self)
         self.__quantum_computer = quantum_computer
         self.__circuit_panel = None
         self.__fast_forward = None

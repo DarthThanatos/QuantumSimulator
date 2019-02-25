@@ -59,9 +59,9 @@ class ExperimentConfig:
         return h_
 
 
-def mc_solve(h, psi0, times, c_op, e_ops, map_func=parallel_map):
+def mc_solve(h, psi0, times, c_op, e_ops, progress_bar, map_func=parallel_map):
     config = ExperimentConfig(h, psi0, times, c_op, e_ops)
-    psi_out, expect_out = run(config, map_func)
+    psi_out, expect_out = run(config, map_func, progress_bar)
     expect = [np.mean(np.array([expect_out[nt][op].real
                                 for nt in range(config.trajectories_number)],
                                dtype=object),
@@ -70,9 +70,9 @@ def mc_solve(h, psi0, times, c_op, e_ops, map_func=parallel_map):
     return psi_out, expect
 
 
-def run(config, map_func):
+def run(config, map_func, progress_bar):
     # set arguments for input to monte carlo
-    map_kwargs = { #'progress_bar': TextProgressBar(),
+    map_kwargs = { 'progress_bar': progress_bar,
                   'num_cpus': 8}
     task_args = (config,)
     task_kwargs = {}

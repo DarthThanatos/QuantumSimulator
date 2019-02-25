@@ -47,12 +47,10 @@ class GraphPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID, figsize=(4., 4.))
         FigureCanvas(self, -1, fig)
-        times = np.linspace(0., 10., 20)
-        plt.plot(times, np.cos(times))
+        plt.gca()
         fig.axes[0].set_xlabel('Time')
         fig.axes[0].set_ylabel('Expectation values')
         self.__correct_axes(fig)
-        plt.legend(["Sigma-Z", "Sigma-Y"])
 
     def __correct_axes(self, fig):
         ax = fig.axes[0]
@@ -60,6 +58,31 @@ class GraphPanel(wx.Panel):
         pos2 = [pos1.x0, pos1.y0 * 2,  pos1.width, pos1.height]
         ax.set_position(pos2) # set a new position
 
+    def plot(self, expect, steps, i, show_x=False, show_y=False, show_z=False):
+        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID)
+        plt.clf()
+        times = np.linspace(0., 10., steps)
+        for j in range(len(expect)):
+            plt.plot(times, expect[j])
+        self.__plot_legend(show_x, show_y, show_z, times[i])
+        self.__correct_axes(fig)
+        fig.canvas.draw()
+
+    def __plot_legend(self, show_x, show_y, show_z, time):
+        legend = []
+        if show_x: legend.append("Sigma-X")
+        if show_y: legend.append("Sigma-Y")
+        if show_z: legend.append("Sigma-Z")
+        plt.legend(legend)
+        if len(legend) !=  0:
+            plt.axvline(x=time, color='black')
+
+    def clean(self):
+        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID)
+        plt.clf()
+        plt.gca()
+        self.__correct_axes(fig)
+        fig.canvas.draw()
 
 class ImgPanel(wx.Panel):
 
@@ -190,16 +213,41 @@ class CoefficientInput(wx.TextCtrl):
         return self.__last_correct_coeficient
 
 
+class ProgressSizer(wx.BoxSizer):
+
+    def __init__(self, panel, mediator):
+        wx.BoxSizer.__init__(self, wx.HORIZONTAL)
+        self.text = wx.StaticText(panel, label="Wait, loading")
+        self.text.Show(False)
+        self.progress_bar = self.__new_progress_bar(panel, mediator)
+        self.Add(self.text)
+        self.AddSpacer(10)
+        self.Add(self.progress_bar)
+
+    def __new_progress_bar(self, panel, mediator):
+        progress_bar = wx.Gauge(panel)
+        mediator.set_progress_bar(progress_bar)
+        progress_bar.Show(False)
+        return progress_bar
+
+    def show_children(self, should_show):
+        self.text.Show(should_show)
+        self.progress_bar.Show(should_show)
+        self.Layout()
+
+
 class SchodringerExperimentPanel(wx.Panel):
 
     def __init__(self, splitter_parent, gate_mediator, quantum_computer):
         wx.Panel.__init__(self, splitter_parent)
         self.__should_show = False
         self.__sash_pos = 800
+        self.__progress_sizer = None
         self.__schodringer_mediator = self.__new_schodringer_mediator(gate_mediator, quantum_computer)
         self.__timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.__animate_showing, self.__timer)
-        self.SetSizer(self.__new_root_sizer())
+        self.__root_sizer = self.__new_root_sizer()
+        self.SetSizer(self.__root_sizer)
 
     def __new_schodringer_mediator(self, gate_mediator, quantum_computer):
         sm = SchodringerMediator(quantum_computer)
@@ -229,8 +277,9 @@ class SchodringerExperimentPanel(wx.Panel):
         return bloch_evolution_panel
 
     def __new_graph_panel(self):
-        self.__graph_panel = GraphPanel(self)
-        return self.__graph_panel
+        graph_panel = GraphPanel(self)
+        self.__schodringer_mediator.set_graph_panel(graph_panel)
+        return graph_panel
 
     def __new_parameters_panel(self):
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -242,8 +291,15 @@ class SchodringerExperimentPanel(wx.Panel):
         sizer.Add(self.__new_steps_ctrl())
         sizer.Add(self.__new_coeff_input())
         sizer.Add(self.__new_destroy_checkbox())
+        sizer.AddSpacer(10)
+        sizer.Add(self.__new_progress_sizer(), 0, wx.CENTER)
+        sizer.AddSpacer(10)
         sizer.Add(self.__new_simulation_button(), 0, wx.CENTER)
         return sizer
+
+    def __new_progress_sizer(self):
+        self.__progress_sizer = ProgressSizer(self, self.__schodringer_mediator)
+        return self.__progress_sizer
 
     def __new_destroy_checkbox(self):
         destroy = wx.CheckBox(self, label="Destroy")
@@ -332,6 +388,11 @@ class SchodringerExperimentPanel(wx.Panel):
             else:
                 self.__timer.Stop()
         parent.SetSashPosition(self.__sash_pos)
+        event.Skip()
+
+    def show_progress(self, should_show):
+        self.__progress_sizer.show_children(should_show)
+        self.__root_sizer.Layout()
 
     def reset_view(self, should_show):
         self.__should_show = should_show

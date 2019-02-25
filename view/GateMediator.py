@@ -13,7 +13,15 @@ class GateMediator:
         self.__notepad = None
         self.__history_panel = None
         self.__tree = None
+        self.__circuit_frame = None
+        self.__notebook_frame = None
         self.__schodringer_mediator = None
+
+    def set_notebook_frame(self, notebook_frame):
+        self.__notebook_frame = notebook_frame
+
+    def set_circuit_frame(self, circuit_frame):
+        self.__circuit_frame = circuit_frame
 
     def set_tree(self, tree):
         self.__tree = tree
@@ -44,6 +52,7 @@ class GateMediator:
 
     def set_schodringer_mediator(self, schodringer_mediator):
         self.__schodringer_mediator = schodringer_mediator
+        self.__schodringer_mediator.set_gate_mediator(self)
 
     def gateSelected(self, gate):
         # called when a view representing a gate has been clicked
@@ -83,6 +92,7 @@ class GateMediator:
         self.__bloch_canvas.reset_view()
         self.__history_panel.reset_view()
         self.__editor.switch_to_circuit_view()
+        self.__schodringer_mediator.experiment_changed()
 
     def experiment_changed(self):
         # called when one of the experiment history buttons were clicked
@@ -96,6 +106,11 @@ class GateMediator:
         quantum_computer.generate_current_circuit_code(file_name)
         self.__editor.switch_to_notepad_view()
         self.__code_notebook.new_tab_if_not_exists(file_name, retain_content=False)
+
+    def schodringer_mode_changed(self, started):
+        # called to lock circuitstd
+        self.__circuit_frame.Enable(not started)
+        self.__notebook_frame.Enable(not started)
 
     def window_closing(self):
         # called before a window is legally executed,

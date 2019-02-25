@@ -158,7 +158,7 @@ class CircuitInspector(wx.SplitterWindow):
         self.__timer.Start(20)
         self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
 
-    def __show_bloch(self, _):
+    def __show_bloch(self, event):
         if not self.__should_show:
             if self.__sash_pos < 800:
                 self.__sash_pos += 40
@@ -170,6 +170,7 @@ class CircuitInspector(wx.SplitterWindow):
             else:
                 self.__timer.Stop()
         self.SetSashPosition(self.__sash_pos)
+        event.Skip()
 
     def onresize(self, ev):
         self.__bloch_canvas.initSize()
