@@ -7,7 +7,6 @@ import numpy as np
 import scipy.sparse as sp
 from qutip import *
 from qutip.fastsparse import csr2fast
-from qutip.ui import TextProgressBar
 from scipy.integrate import ode
 from scipy.integrate._ode import zvode
 from scipy.linalg import get_blas_funcs
@@ -59,7 +58,19 @@ class ExperimentConfig:
         return h_
 
 
-def mc_solve(h, psi0, times, c_op, e_ops, progress_bar, map_func=parallel_map):
+def _mc_dm_avg(psi_list):
+    """
+    Private function that averages density matrices in parallel
+    over all trajectories for a single time using parfor.
+    """
+    ln = len(psi_list)
+    dims = psi_list[0].dims
+    shape = psi_list[0].shape
+    out_data = np.sum([psi.data for psi in psi_list]) / ln
+    return Qobj(out_data, dims=dims, shape=shape, fast='mc-dm')
+
+
+def mc_solve(h, psi0, times, c_op, e_ops, progress_bar, map_func=serial_map):
     config = ExperimentConfig(h, psi0, times, c_op, e_ops)
     psi_out, expect_out = run(config, map_func, progress_bar)
     expect = [np.mean(np.array([expect_out[nt][op].real
@@ -67,13 +78,13 @@ def mc_solve(h, psi0, times, c_op, e_ops, progress_bar, map_func=parallel_map):
                                dtype=object),
                       axis=0)
               for op in range(config.e_num)]
-    return psi_out, expect
+    states = parfor(_mc_dm_avg, psi_out.T)
+    return states, expect
 
 
 def run(config, map_func, progress_bar):
     # set arguments for input to monte carlo
-    map_kwargs = { 'progress_bar': progress_bar,
-                  'num_cpus': 8}
+    map_kwargs = {'progress_bar': progress_bar}
     task_args = (config,)
     task_kwargs = {}
     results = map_func(_mc_alg_evolve,
@@ -95,7 +106,12 @@ def _mc_alg_evolve(nt, config):
     states_out = np.zeros(config.num_times, dtype=object)
     temp = sp.csr_matrix(np.reshape(config.psi0_vector, (config.psi0.shape[0], 1)), dtype=complex)
     temp = csr2fast(temp)
-    states_out[0] = Qobj(temp, config.psi0.dims, config.psi0.shape, fast='mc')
+    states_out[0] = Qobj(temp * temp.H,
+                         [config.psi0.dims[0],
+                          config.psi0.dims[0]],
+                         [config.psi0.shape[0],
+                          config.psi0.shape[0]],
+                         fast='mc-dm')
     expect_out = []
     for i in range(config.e_num):
         expect_out.append(np.zeros(config.num_times, dtype=complex))
@@ -139,7 +155,11 @@ def _mc_alg_evolve(nt, config):
         out_psi_csr = dense2D_to_fastcsr_cmode(np.reshape(out_psi,
                                                (out_psi.shape[0], 1)),
                                                out_psi.shape[0], 1)
-        states_out[k] = Qobj(out_psi_csr, config.psi0.dims, config.psi0.shape, fast='mc')
+        states_out[k] = Qobj(
+            out_psi_csr * out_psi_csr.H,
+            [config.psi0.dims[0], config.psi0.dims[0]],
+            [config.psi0.shape[0], config.psi0.shape[0]],
+            fast='mc-dm')
         e_ops = config.e_ops
         for jj in range(config.e_num):
             expect_out[jj][k] = cy_expect_psi_csr(
@@ -166,5 +186,3 @@ if __name__ == '__main__':
     ax.set_ylabel('Expectation values')
     ax.legend(["Sigma-Z", "Sigma-Y"])
     plt.show()
-
-

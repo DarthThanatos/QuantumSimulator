@@ -8,7 +8,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from qutip import Bloch
 import matplotlib.pyplot as plt
 from model.constants import MASTERS_EQUATIONS, MONTE_CARLO
-from util.Utils import new_big_font_label, newScaledImgBitmap, newStandardButton
+from util.Utils import new_big_font_label, newScaledImgBitmap, newStandardButton, new_titled_view, ImgPanel
 from view.SchodringerMediator import SchodringerMediator
 from view.constants import SCHODRINGER_EXPECTATIONS_FIGURE_ID, HAMILTONIAN_PANEL_ID, PSI_PANEL_ID
 import numpy as np
@@ -16,6 +16,7 @@ from math import pi
 
 
 class BlochEvolutionPanel(wx.ScrolledWindow):
+
     def __init__(self, parent):
         wx.ScrolledWindow. __init__(self, parent, -1, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
         self.figure = Figure(figsize=(3.,3.))
@@ -24,28 +25,26 @@ class BlochEvolutionPanel(wx.ScrolledWindow):
         b.make_sphere()
         self.__bloch = b
 
-    def reset_view(self):
-        nqubits = self.__quantum_computer.circuit_qubits_number()
-        psi = self.__quantum_computer.current_simulation_psi()
-        if nqubits != 1:
-            return
-        self.__bloch.clear()
-        self.__bloch.add_states(psi)
-        self.__bloch.make_sphere()
-        self.__bloch.fig.canvas.draw()
+    def update_bloch(self, xs, ys, zs, state):
+        b = self.__bloch
+        b.clear()
+        b.add_states(state)
+        b.add_points([xs, ys, zs])
+        b.make_sphere()
+        b.fig.canvas.draw()
 
-    def initSize(self):
-        w,h = self.GetClientSize()
-        if w == 0 or h == 0: return
-        ppiw, ppih = wx.GetDisplayPPI()
-        self.figure.set_size_inches( (w / ppiw, w / ppiw))
+    def clean_bloch(self):
+        b = self.__bloch
+        b.clear()
+        b.make_sphere()
+        b.fig.canvas.draw()
 
 
 class GraphPanel(wx.Panel):
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID, figsize=(4., 4.))
+        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID, figsize=(4., 3.5))
         FigureCanvas(self, -1, fig)
         plt.gca()
         fig.axes[0].set_xlabel('Time')
@@ -83,21 +82,6 @@ class GraphPanel(wx.Panel):
         plt.gca()
         self.__correct_axes(fig)
         fig.canvas.draw()
-
-class ImgPanel(wx.Panel):
-
-    def __init__(self, parent, img_path, size):
-        wx.Panel.__init__(self, parent, size=size)
-        self.__bmp = newScaledImgBitmap(img_path, size)
-        self.__size = size
-        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
-        self.SetBackgroundColour(wx.WHITE)
-        self.Bind(wx.EVT_PAINT, self.__on_paint)
-
-    def __on_paint(self, event):
-        dc = wx.AutoBufferedPaintDC(self)
-        dc.Clear()
-        dc.DrawBitmap(self.__bmp, 0, 0)
 
 
 class CenteredTextLatexPanel(wx.Panel):
@@ -324,7 +308,7 @@ class SchodringerExperimentPanel(wx.Panel):
     def __new_steps_ctrl(self):
         steps_ctrl = wx.SpinCtrl(self, min=0, max=100, initial=20)
         self.__schodringer_mediator.set_steps_ctrl(steps_ctrl)
-        return self.__new_titled_view("Simulation steps", steps_ctrl)
+        return new_titled_view(self, "Simulation steps", steps_ctrl)
 
     def __new_simulation_button(self):
         self.__simulation_button = newStandardButton(self, (125,50), "start simulation", self.__change_simulation_mode)
@@ -334,25 +318,18 @@ class SchodringerExperimentPanel(wx.Panel):
     def __change_simulation_mode(self, _):
         self.__schodringer_mediator.change_simulation_mode()
 
-    def __new_titled_view(self, title, view):
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(self, label=title))
-        sizer.AddSpacer(10)
-        sizer.Add(view)
-        return sizer
-
     def __new_simulation_choice(self):
         choices = [MONTE_CARLO, MASTERS_EQUATIONS]
         method_choice = wx.Choice(self, choices=choices)
         method_choice.SetSelection(0)
         self.__schodringer_mediator.set_metod_choice(method_choice)
-        return self.__new_titled_view("Method of simulation", method_choice)
+        return new_titled_view(self, "Method of simulation", method_choice)
 
     def __new_coeff_input(self):
         coefficient_input = CoefficientInput(self)
         self.__schodringer_mediator.set_coefficient_input(coefficient_input)
         coefficient_input.set_schodringer_mediator(self.__schodringer_mediator)
-        return self.__new_titled_view("tunnelling coefficient", coefficient_input)
+        return new_titled_view(self, "tunnelling coefficient", coefficient_input)
 
     def __new_matrix_canvas(self):
         matrix_panel = MatrixPanel(self, [[0, 0], [0, 0]], HAMILTONIAN_PANEL_ID)
@@ -397,3 +374,4 @@ class SchodringerExperimentPanel(wx.Panel):
     def reset_view(self, should_show):
         self.__should_show = should_show
         self.__timer.Start(15)
+

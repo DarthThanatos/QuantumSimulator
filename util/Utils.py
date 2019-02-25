@@ -121,3 +121,27 @@ def is_iterable(arg):
         return True
     except TypeError:
         return False
+
+
+def new_titled_view(parent, title, view):
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(wx.StaticText(parent, label=title))
+    sizer.AddSpacer(10)
+    sizer.Add(view)
+    return sizer
+
+
+class ImgPanel(wx.Panel):
+
+    def __init__(self, parent, img_path, size):
+        wx.Panel.__init__(self, parent, size=size)
+        self.__bmp = newScaledImgBitmap(img_path, size)
+        self.__size = size
+        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        self.SetBackgroundColour(wx.WHITE)
+        self.Bind(wx.EVT_PAINT, self.__on_paint)
+
+    def __on_paint(self, event):
+        dc = wx.AutoBufferedPaintDC(self)
+        dc.Clear()
+        dc.DrawBitmap(self.__bmp, 0, 0)

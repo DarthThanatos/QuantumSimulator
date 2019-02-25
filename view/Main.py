@@ -55,7 +55,7 @@ class SimulatorApp(wx.App):
         editor = Editor(frame, self.gateMediator, quantum_computer)
         editor.Show()
 
-        self.main = UpperMenu(frame, self.gateMediator)
+        self.main = UpperMenu(frame, self.gateMediator, quantum_computer)
         self.main.initUpperMenu()
         self.main.Show()
 

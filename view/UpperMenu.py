@@ -1,6 +1,7 @@
 import wx
 import wx.lib.buttons
 from model.constants import *
+from view.QuantumWalkDialog import QuantumWalkDialog
 
 [wxID_BOAFRAME, wxID_BOAFRAMEPALETTE, wxID_BOAFRAMETOOLBAR,
 ] = [wx.NewId() for _init_ctrls in range(3)]
@@ -12,12 +13,13 @@ class UpperMenu(wx.MDIChildFrame):
 
     palettePages =[]
 
-    def __init__(self, parent, gateMediator):
+    def __init__(self, parent, gateMediator, quantum_computer):
         wx.MDIChildFrame.__init__(self,
               id=wxID_BOAFRAME, name='', parent=parent, pos=wx.Point(116, 275),
               size=wx.Size(645, 74), style=   wx.SIMPLE_BORDER,
               title="SimQuant - Python Quantum scripts IDE & Quantum Gates Builder")
         self.gateMediator = gateMediator
+        self.__quantum_computer = quantum_computer
 
         self.toolBar = wx.ToolBar(id=wxID_BOAFRAMETOOLBAR, name='toolBar',
               parent=self, pos=wx.Point(0, 0), size=wx.Size(637, 24),
@@ -25,18 +27,11 @@ class UpperMenu(wx.MDIChildFrame):
         self.palette = wx.Notebook(id=wxID_BOAFRAMEPALETTE, name='palette',
               parent=self, pos=wx.Point(0, 24), size=wx.Size(637, 23), style=0)
         self.toolBar.AddTool(bitmap= wx.Image('../Images/Shared/Inspector.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap(),
-              toolId=wxID_BOAFRAMETOOLBARTOOLS0, label="",
-              shortHelp='Brings the Inspector to the front')
-        self.toolBar.AddTool(bitmap= wx.Image('../Images/Shared/Editor.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap(),
-              toolId=wxID_BOAFRAMETOOLBARTOOLS1, label="",
-              shortHelp='Brings the Editor to the front')
+              toolId=wxID_BOAFRAMETOOLBARTOOLS0, label="", shortHelp='Run quantum walk!')
         self.toolBar.AddSeparator()
-        self.addTool('../Images/Shared/Help', 'Simulator or selected component help',
-              'Show help', self.OnHelpToolClick)
-        self.addTool('../Images/Shared/wxWinHelp', 'wxPython help',
-              'Show help', self.OnWxWinHelpToolClick)
-        self.addTool('../Images/Shared/PythonHelp', 'Python help',
-              'Show help', self.OnPythonHelpToolClick)
+        self.addTool('../Images/Shared/Help', 'Simulator or selected component help', 'Show help')
+        self.addTool('../Images/Shared/wxWinHelp', 'wxPython help', 'Show help')
+        self.addTool('../Images/Shared/PythonHelp', 'Python help', 'Show help')
 
         self.SetToolBar(self.toolBar)
         self.toolBar.Realize()
@@ -46,8 +41,6 @@ class UpperMenu(wx.MDIChildFrame):
         self.Bind(wx.EVT_ICONIZE, self.OnBoaframeIconize)
         self.Bind(wx.EVT_TOOL, self.OnInspectorToolClick,
               id=wxID_BOAFRAMETOOLBARTOOLS0)
-        self.Bind(wx.EVT_TOOL, self.OnEditorToolClick,
-              id=wxID_BOAFRAMETOOLBARTOOLS1)
 
     def setDefaultSize(self):
         screenX, screenY, screenWidth, screenHeight = wx.GetClientDisplayRect()
@@ -67,52 +60,18 @@ class UpperMenu(wx.MDIChildFrame):
 
         self.palettePages.append(palettePage)
 
-    def addTool(self, filename, text, help, func, toggle = False):
+    def addTool(self, filename, text, help, func=None, toggle = False):
         mID = wx.NewId()
         self.toolBar.AddTool(toolId = mID, bitmap = wx.Image(filename+'.png').ConvertToBitmap(),
           shortHelp = text, label="")
-        self.Bind(wx.EVT_TOOL, func, id=mID)
+        if func:
+            self.Bind(wx.EVT_TOOL, func, id=mID)
         return mID
 
     def OnInspectorToolClick(self, event):
-        pass
-
-    def OnEditorToolClick(self, event):
-        pass
-
-    def OnHelpToolClick(self, event):
-        pass
-
-    def OnWxWinHelpToolClick(self, event):
-        pass
-
-    def OnPythonHelpToolClick(self, event):
-        pass
-
-    def OnCustomHelpToolClick(self, event):
-        pass
-
-    def OnFileExit(self, event):
-        self.Close()
-
-    def OnDialogPaletteClick(self, event):
-        pass
-
-    def OnZopePaletteClick(self, event):
-        pass
-
-    def OnComposeClick(self, event):
-        pass
-
-    def OnInheritClick(self, event):
-        pass
-
-    def OnCloseClick(self, event):
-        self.Close()
-
-
-    def OnCreateNew(self, name, controller):
-        pass
+        quantum_walk_dialog = QuantumWalkDialog(self, self.__quantum_computer)
+        quantum_walk_dialog.ShowModal()
+        quantum_walk_dialog.Destroy()
 
     # noinspection PyMethodOverriding
     def Iconize(self, iconize):

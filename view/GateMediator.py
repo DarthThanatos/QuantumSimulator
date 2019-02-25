@@ -73,7 +73,7 @@ class GateMediator:
 
     def circuit_grid_changed(self):
         # called when a gate is freshly added, completely removed, or an existing gate changed its position
-        pass
+        self.__schodringer_mediator.circuit_grid_changed()
 
     def run_in_console(self, quantum_computer):
         # called when "run in console" button was clicked

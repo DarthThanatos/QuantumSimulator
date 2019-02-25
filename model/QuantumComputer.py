@@ -2,6 +2,7 @@
 from model.Circuit import Circuit
 from model.CodeProcessor import CodeProcessor
 from model.ExperimentHistory import ExperimentHistory
+from model.QuantumWalk import QuantumWalk
 from util.Utils import to_bin_str
 import numpy as np
 
@@ -9,9 +10,15 @@ import numpy as np
 class QuantumComputer:
 
     def __init__(self, nqbits):
-        self.__circuit = Circuit(self, nqbits)
+        self.__experiment_history = ExperimentHistory(self)
         self.__code_processor = CodeProcessor(self)
-        self.__experiment_history = ExperimentHistory(self, self.__circuit)
+        self.__circuit = Circuit(self, nqbits)
+        self.__experiment_history.store_cricuit_experiment(self.__circuit)
+        self.__circuit.update_schodringer_experiments()
+        self.__quantum_walk = QuantumWalk()
+
+    def simulate_quantum_walk(self, t, center):
+        return self.__quantum_walk.simulate(t, center)
 
     def get_current_schodringer_experiment(self):
         return self.__experiment_history.get_current_schodringer_experiment()

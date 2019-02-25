@@ -28,7 +28,7 @@ class SchodringerExperiment:
         if method == MONTE_CARLO:
             return mc_solve(H, psi0, times, c_op, e_ops, progress_bar)
         elif method == MASTERS_EQUATIONS:
-            res = mesolve(H, psi0, times, [c_op], e_ops, options=qutip.Options(store_states=True), progress_bar=progress_bar)
+            res = mesolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=qutip.Options(store_states=True), progress_bar=progress_bar)
             return (res.states, res.expect)
 
     def solve(self, method=MONTE_CARLO, tunneling_coef=1, steps=20, for_x=True, for_y=True,

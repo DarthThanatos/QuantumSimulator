@@ -28,7 +28,7 @@ class CircuitPanel(wx.Panel):
         self.shouldStimulate = False
         self.filled_slots = {} # (i,j) => gateTile
         self.flattened_multigates = {}  # {(ctrl1, j1) -> (name_1, target_i_1), (ctrl2, j2) -> (name_2, target_i_2)...}
-        self.gateDragger = GateDragger(self, self.__quantum_computer)
+        self.gateDragger = GateDragger(self, gate_mediator, self.__quantum_computer)
         self.multiqbitPlacer = MultiqbitGatePlacer(self, self.__quantum_computer)
         self.gatePlacer = GatePlacer(self, gate_mediator, self.__quantum_computer)
         self.gateName = None

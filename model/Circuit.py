@@ -128,7 +128,7 @@ class Circuit:
 
     def add_qbit(self):
         self.__register = self.__register_with_added_qbit()
-        self.__update_schodringer_experiments()
+        self.update_schodringer_experiments()
 
     def remove_qbit(self, i):
         if self.__grid.__contains__(i):
@@ -136,9 +136,9 @@ class Circuit:
         self.__shift_grid(i)
         self.__register = self.__register_with_removed_qbit(i)
         self.__multi_gates = self.__multi_qbit_gates_after_qbit_removed(i)
-        self.__update_schodringer_experiments()
+        self.update_schodringer_experiments()
 
-    def __update_schodringer_experiments(self):
+    def update_schodringer_experiments(self):
         # check if can add schodringer experiment working only with one qubit
         if self.__register.nqubits == 1:
             self.__quantum_computer.add_schodringer_experiment_if_not_exists()

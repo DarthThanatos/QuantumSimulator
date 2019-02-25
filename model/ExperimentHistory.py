@@ -23,12 +23,11 @@ class CircuitExpriment:
 
 class ExperimentHistory:
 
-    def __init__(self, quantum_computer, initial_circuit):
+    def __init__(self, quantum_computer):
         self.__quantum_computer = quantum_computer
         self.__circuit_experiments = []
         self.__schodringer_experiments = {}
-        self.store_cricuit_experiment(initial_circuit)
-        self.__current_experment_index = 0
+        self.__current_experment_index = -1
 
     def store_cricuit_experiment(self, circuit):
         index = len(self.__circuit_experiments)
@@ -38,8 +37,10 @@ class ExperimentHistory:
 
     def restore_circuit_experiment(self, experiment_index):
         circuit_experiment = self.__circuit_experiments[experiment_index]
-        self.__quantum_computer.set_circuit(circuit_experiment.circuit())
+        circuit = circuit_experiment.circuit()
+        self.__quantum_computer.set_circuit(circuit)
         self.__current_experment_index = experiment_index
+        circuit.update_schodringer_experiments()
 
     def all_experiments(self):
         return self.__circuit_experiments[:]
@@ -48,7 +49,6 @@ class ExperimentHistory:
         index = self.__current_experment_index
         sch_exps = self.__schodringer_experiments
         if index not in sch_exps:
-            print("adding schodringer experiment")
             circuit = self.__circuit_experiments[index].circuit()
             experiment = SchodringerExperiment(circuit)
             sch_exps[index] = experiment
@@ -57,7 +57,6 @@ class ExperimentHistory:
         index = self.__current_experment_index
         sch_exps = self.__schodringer_experiments
         if index in sch_exps:
-            print("removing schodringer experiment")
             sch_exps.__delitem__(index)
 
     def get_current_schodringer_experiment(self):

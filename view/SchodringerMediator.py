@@ -2,41 +2,33 @@ import time
 from threading import Thread
 
 import wx
+from qutip import sigmax, sigmay, sigmaz
 from qutip.ui import BaseProgressBar
 
 SHOULD_CONTINUE = 0
 
+
 def evolve(bloch_evolution_sphere, graph_panel, states, expectations, sentinel, steps, for_x, for_y, for_z):
-
-        def update_bloch(xs_, ys_, zs_, state):
-            bloch_evolution_sphere.clear()
-            bloch_evolution_sphere.add_states(state)
-            bloch_evolution_sphere.add_points([xs_, ys_, zs_])
-            bloch_evolution_sphere.make_sphere()
-            bloch_evolution_sphere.fig.canvas.draw()
-
         i = 0
         xs = []
         ys = []
         zs = []
-
         while sentinel[SHOULD_CONTINUE]:
             if i == steps:
                 i = 0
-                # xs = []
-                # ys = []
-                # zs = []
-            # st = states[i]
+                xs = []
+                ys = []
+                zs = []
+            st = states[i]
             try:
-                pass
-                # xs.append(float((st.dag() * sigmax() * st).data[0,0]))
-                # ys.append(float((st.dag() * sigmay() * st).data[0,0]))
-                # zs.append(float((st.dag() * sigmaz() * st).data[0,0]))
-                # wx.CallAfter(update_bloch, xs, ys, zs, states[i])
+                xs.append(float((st.dag() * sigmax() * st).data[0,0]))
+                ys.append(float((st.dag() * sigmay() * st).data[0,0]))
+                zs.append(float((st.dag() * sigmaz() * st).data[0,0]))
+                wx.CallAfter(bloch_evolution_sphere.update_bloch, xs, ys, zs, states[i])
                 wx.CallAfter(graph_panel.plot, expectations, steps, i, show_x=for_x, show_y=for_y, show_z=for_z)
             except Exception as e:
                 print(e)
-            i+=1
+            i += 1
             time.sleep(.5)
 
 
@@ -161,18 +153,18 @@ class SchodringerMediator:
         destroy = self.__destroy_checkbox.IsChecked()
         self.__progress_bar.progress_bar.SetValue(0)
         self.__schodringer_panel.show_progress(True)
-        psi, expectations = self.__schodringer_experiment.solve(method, tunneling_coef, steps, for_x, for_y, for_z, destroy, self.__progress_bar)
-        self.__visualize_solution(psi, expectations, steps, for_x, for_y, for_z)
+        states, expectations = self.__schodringer_experiment.solve(method, tunneling_coef, steps, for_x, for_y, for_z, destroy, self.__progress_bar)
+        self.__visualize_solution(states, expectations, steps, for_x, for_y, for_z)
         self.__schodringer_panel.show_progress(False)
 
-    def __visualize_solution(self, psi, expectations, steps, for_x, for_y, for_z):
+    def __visualize_solution(self, states, expectations, steps, for_x, for_y, for_z):
         self.__evolution_thread = Thread(
             target=evolve,
             daemon=True,
             args=(
                 self.__bloch_evolution,
                 self.__graph_panel,
-                psi,
+                states,
                 expectations,
                 self.__sentinel,
                 steps,
@@ -188,6 +180,7 @@ class SchodringerMediator:
         self.__sentinel[SHOULD_CONTINUE] = False
         self.__evolution_thread.join()
         self.__graph_panel.clean()
+        self.__bloch_evolution.clean_bloch()
         self.__gate_mediator.schodringer_mode_changed(started=False)
 
     def __bulk_enable(self, enabled):
@@ -206,6 +199,8 @@ class SchodringerMediator:
         self.__reset_state()
 
     def __visualize_hamiltonian(self):
+        if not self.__schodringer_experiment:
+            return
         coefficient = self.__coefficient_input.get_coefficient()
         h = self.__schodringer_experiment.get_hamiltonian(coefficient)
         self.__matrix_panel.change_matrix_value(h.full())
@@ -218,3 +213,6 @@ class SchodringerMediator:
                 self.__quantum_computer.get_current_schodringer_experiment()
             self.__visualize_hamiltonian()
             self.__psi_panel.change_psi_value(self.__schodringer_experiment.get_psi0())
+
+    def circuit_grid_changed(self):
+        self.__visualize_hamiltonian()

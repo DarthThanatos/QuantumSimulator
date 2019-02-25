@@ -172,12 +172,11 @@ class ParameterDialog(wx.Dialog):
     def __on_ok(self, ev):
         for name, value in self.__get_gate_kwargs().items():
             self.__gate.set_parameter_value(name, value)
-        print(self.__gate.qutip_object())
-        self.EndModal(200)
+        self.EndModal(wx.OK)
 
     def __on_cancel(self, ev):
         self.__quantum_computer.remove_gate(*self.__ij)
-        self.EndModal(100)
+        self.EndModal(wx.CANCEL)
 
 
 class GatePlacer:
@@ -200,7 +199,10 @@ class GatePlacer:
     def __query_gate_parameters(self, gate_name, i, j):
         gate = self.__quantum_computer.add_gate(i, j, gate_name)
         if len(gate.get_parameters_names()) == 0:
+            self.__gate_mediator.circuit_grid_changed()
             return
         dialog = ParameterDialog(self.__circuit, self.__quantum_computer, gate, i, j)
-        dialog.ShowModal()
+        status = dialog.ShowModal()
+        if status == wx.OK:
+            self.__gate_mediator.circuit_grid_changed()
         dialog.Destroy()

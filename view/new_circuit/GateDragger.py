@@ -8,7 +8,7 @@ class GateDragger:
 
     DELETE_PROMPT_TRESHOLD = 5
 
-    def __init__(self, circuit, quantumComputer):
+    def __init__(self, circuit, gate_mediator, quantumComputer):
         self.movedGateShadow = None
         self.movedShadowStartPos = (0,0)
         self.circuit = circuit
@@ -17,6 +17,7 @@ class GateDragger:
         self.movedDist = 0
         self.promptedDelete = False
         self.quantumComputer = quantumComputer
+        self.__gate_mediator = gate_mediator
 
     def initDraggingGate(self, event, draggedGateTile):
         if draggedGateTile is not None:
@@ -67,7 +68,9 @@ class GateDragger:
              m_y >= self.circuit.getH(qbitAreaOnly=True) or m_y < 0:
                 self.draggedGateTile = None
                 self.circuit.resetView()
+                self.__gate_mediator.circuit_grid_changed()
                 return
-        print(self.quantumComputer.recreate_gate_at(i, j, removed_gate))
+        self.quantumComputer.recreate_gate_at(i, j, removed_gate)
+        self.__gate_mediator.circuit_grid_changed()
         self.draggedGateTile = None
         self.circuit.resetView()
