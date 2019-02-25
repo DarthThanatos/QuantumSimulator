@@ -49,6 +49,7 @@ class GateDragger:
 
     def stopDraggingGate(self, mx, my):
         if not self.movedGateShadow:
+            self.draggedGateTile = None
             return
         self.movedGateShadow.Hide()
         self.movedGateShadow.EndDrag()
@@ -62,6 +63,7 @@ class GateDragger:
     def swapSlotsIfPossible(self, m_x, m_y):
         i,j = mouse_to_grid_coordinates(m_x, m_y)
         if not self.quantumComputer.can_add_gate_at(i, j):
+            self.draggedGateTile = None
             return
         removed_gate = self.quantumComputer.remove_gate(*self.draggedGateTile.ij)
         if m_x >= self.circuit.getW() or m_x < 2 * GATE_SIZE or \

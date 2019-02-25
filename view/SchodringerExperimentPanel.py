@@ -8,7 +8,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from qutip import Bloch
 import matplotlib.pyplot as plt
 from model.constants import MASTERS_EQUATIONS, MONTE_CARLO
-from util.Utils import new_big_font_label, newScaledImgBitmap, newStandardButton, new_titled_view, ImgPanel
+from util.Utils import new_big_font_label, newStandardButton, new_titled_view, ImgPanel
 from view.SchodringerMediator import SchodringerMediator
 from view.constants import SCHODRINGER_EXPECTATIONS_FIGURE_ID, HAMILTONIAN_PANEL_ID, PSI_PANEL_ID
 import numpy as np
