@@ -29,6 +29,9 @@ class Gate:
     def get_parameter_default(self, parameter_name):
         raise Exception("no parameter default")
 
+    def get_parameters_defaults(self):
+        return dict(map(lambda x: (x, self.get_parameter_default(x)), self.get_parameters_names()))
+
     def _get_parameters_types(self):
         # returns functions that convert a string to the appropriate type
         return {}
@@ -88,3 +91,9 @@ class Gate:
 
     def generate_controlled_gate_code(self, step, controls):
         return "{}.{}{}(step={}, ctrls={}, target={})\n".format(QUANTUM_INSTANCE, CONTROLLED, self.get_name(), step, controls, self.target())
+
+    def latex_matrix_str(self):
+        return ""
+
+    def latex_symbol(self):
+        return "G"

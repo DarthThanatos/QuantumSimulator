@@ -72,6 +72,7 @@ class CircuitPanel(wx.Panel):
             self.gatePlacer.placeGate(m_x,m_y)
         selectedGateTile = self.detectGateSelection(m_x, m_y)
         if selectedGateTile is not None:
+            self.__gate_mediator.inspect_gate(selectedGateTile, self.__quantum_computer)
             self.gateDragger.initDraggingGate(event, selectedGateTile)
         self.multiqbitPlacer.place_target(*event.GetPosition())
         self.Refresh()

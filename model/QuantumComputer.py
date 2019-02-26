@@ -17,6 +17,9 @@ class QuantumComputer:
         self.__circuit.update_schodringer_experiments()
         self.__quantum_walk = QuantumWalk()
 
+    def get_gate_at(self, i, j):
+        return self.__circuit.get_gate_at(i, j)
+
     def simulate_quantum_walk(self, t, center):
         return self.__quantum_walk.simulate(t, center)
 

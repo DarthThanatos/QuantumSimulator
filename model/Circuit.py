@@ -331,3 +331,8 @@ class Circuit:
 
     def simulation_step(self):
         return self.__step_simulator.simulation_step()
+
+    def get_gate_at(self, i, j):
+        grid_i = self.__grid.get(i, None)
+        if grid_i is not None:
+            return grid_i.get(j, None)

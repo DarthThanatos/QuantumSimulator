@@ -17,3 +17,13 @@ class RotationXGate(Rotation):
     @staticmethod
     def axis():
         return X
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{cos (\frac{\phi}{2})}{-isin (\frac{\phi}{2})}' \
+            r'\,\,\,' \
+            r' \stackrel{-isin (\frac{\phi}{2})}{cos (\frac{\phi}{2})} ' \
+            r'\right]'
+
+    def latex_symbol(self):
+        return "R_x"

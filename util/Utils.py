@@ -5,6 +5,10 @@ import sys
 from functools import reduce
 from math import sqrt
 from win32api import GetSystemMetrics
+import matplotlib.patches
+import matplotlib.lines
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+import matplotlib.pyplot as plt
 
 import numpy as np
 import wx
@@ -145,3 +149,97 @@ class ImgPanel(wx.Panel):
         dc = wx.AutoBufferedPaintDC(self)
         dc.Clear()
         dc.DrawBitmap(self.__bmp, 0, 0)
+
+
+class CenteredTextLatexPanel(wx.Panel):
+
+    def __init__(self, parent, figure_number, figure_size, fontsize=23):
+        wx.Panel.__init__(self, parent)
+        self.__fig = plt.figure(figure_number, figsize=figure_size)
+        self.__fig_number = figure_number
+        self.__font_size=fontsize
+        FigureCanvas(self, -1, self.__fig)
+        plt.clf()
+        plt.axis("off")
+        self.__t = self._draw()
+
+    def _draw(self):
+        text = self._prepare_text()
+        t = plt.text(0, 0, text, fontsize=self.__font_size)
+        self._center_text(t)
+        return t
+
+    def _get_text_coordinates(self, text):
+        r = self.__fig.canvas.get_renderer()
+        bb = text.get_window_extent(renderer=r)
+        inv = self.__fig.axes[0].transData.inverted()
+        x0, y0 = inv.transform((bb.x0, bb.y0))
+        x1, y1 = inv.transform((bb.x1, bb.y1))
+        return x0, y0, x1-x0, y1-y0
+
+    def _draw_rect_to_text(self, text):
+        fig = self.__fig
+        x0, y0, width, height = self._get_text_coordinates(text)
+        rect = matplotlib.patches.Rectangle((x0, y0), width, height, linewidth=1, edgecolor='r', facecolor='none')
+        fig.axes[0].add_patch(rect)
+
+    def _draw_line(self, fig):
+        l = matplotlib.lines.Line2D([0, 1], [.5, .5])
+        fig.axes[0].add_line(l)
+
+    def _center_text(self, t):
+        _, _, width, height = self._get_text_coordinates(t)
+        new_x = .5 - width * .5
+        new_y = .5 - height * .25
+        t.set_position((new_x, new_y))
+
+    def _prepare_text(self):
+        raise Exception("No prepared text to display")
+
+    def _redraw(self):
+        plt.figure(self.__fig_number)
+        self.__t.remove()
+        self.__t = self._draw()
+        self.__fig.canvas.draw()
+
+
+class MatrixPanel(CenteredTextLatexPanel):
+    def __init__(self, parent, matrix, fig_numer):
+        self.__matrix = matrix
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (4., .75))
+
+    def _prepare_text(self):
+        matrix = self.__matrix
+        text = r'$H = \left[' \
+               r' \stackrel{' + '{:.2f}'.format(matrix[0][0]) + '}{' + '{:.2f}'.format(matrix[0][1]) + r'}' \
+               r'\,\,\,' \
+               r' \stackrel{' + '{:.2f}'.format(matrix[1][0]) + '}{' + '{:.2f}'.format(matrix[1][1]) + r'}' \
+               r'\right]$'
+        return text
+
+    def change_matrix_value(self, matrix):
+        self.__matrix = matrix
+        self._redraw()
+
+
+class InspectorMatrixPanel(CenteredTextLatexPanel):
+    def __init__(self, parent, symbol, matrix, fig_numer, str_latex_matrix=""):
+        self.__matrix = matrix
+        self.__str_latex_matrix = str_latex_matrix
+        self.__symbol = symbol
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (4., 1.), fontsize=13)
+
+    def _prepare_text(self):
+        matrix = self.__matrix
+        slm = self.__str_latex_matrix
+        slm = slm + " = " if slm is not "" else ""
+        text = r'$' + self.__symbol + ' = ' + slm + ' \left[' \
+               r' \stackrel{' + '{:.2f}'.format(matrix[0][0]) + '}{' + '{:.2f}'.format(matrix[0][1]) + r'}' \
+               r'\,\,\,' \
+               r' \stackrel{' + '{:.2f}'.format(matrix[1][0]) + '}{' + '{:.2f}'.format(matrix[1][1]) + r'}' \
+               r'\right]$'
+        return text
+
+    def change_matrix_value(self, matrix):
+        self.__matrix = matrix
+        self._redraw()

@@ -16,6 +16,14 @@ class GateMediator:
         self.__circuit_frame = None
         self.__notebook_frame = None
         self.__schodringer_mediator = None
+        self.__probs_panel = None
+        self.__gate_inspector_panel = None
+
+    def set_probs_panel(self, probs_panel):
+        self.__probs_panel = probs_panel
+
+    def set_gate_inspector_panel(self, gate_inspector_panel):
+        self.__gate_inspector_panel = gate_inspector_panel
 
     def set_notebook_frame(self, notebook_frame):
         self.__notebook_frame = notebook_frame
@@ -53,6 +61,17 @@ class GateMediator:
     def set_schodringer_mediator(self, schodringer_mediator):
         self.__schodringer_mediator = schodringer_mediator
         self.__schodringer_mediator.set_gate_mediator(self)
+
+    def inspect_gate(self, selected_gate_tile, quantum_computer):
+        self.__probs_panel.Show(False)
+        gate = quantum_computer.get_gate_at(*selected_gate_tile.ij)
+        self.__gate_inspector_panel.inspect(gate)
+
+    def init_stop_inspecting_gate(self):
+        self.__probs_panel.show_partially()
+
+    def stop_inspecting_gate(self):
+        self.__probs_panel.show_fully()
 
     def gateSelected(self, gate):
         # called when a view representing a gate has been clicked

@@ -9,6 +9,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
+from view.ParametersDialog import GateInspectorPanel
+
 
 class BlochCanvas(wx.ScrolledWindow):
     def __init__(self, parent, gate_mediator, quantum_computer):
@@ -82,51 +84,33 @@ class HistoryPanel(ScrolledPanel):
         self.__create_new_history_view()
 
 
-class CircuitInspector(wx.SplitterWindow):
-
+class ProbsPanel(ScrolledPanel):
 
     def __init__(self, parent, gate_mediator, quantum_computer):
-        wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(450, 1000))
+        ScrolledPanel.__init__(self, parent)
         self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
-        gate_mediator.set_circuit_inspector(self)
-        self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
-        self.__probs_area = None
-        self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
-        self.__sash_pos = 800
-        self.SetSashPosition(self.__sash_pos)
-        self.__should_show = False
-        self.Bind(wx.EVT_SIZE, self.onresize)
-        self.__timer = wx.Timer(self.__bloch_canvas)
-        self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
-        self.__bind()
-
-    def __new_probs_history_splitter(self):
-        probs_history_splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
-        probs_panel = self.__new_probs_panel(probs_history_splitter)
-        history_panel = HistoryPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
-        probs_history_splitter.SplitHorizontally(probs_panel, history_panel, 375)
-        return probs_history_splitter
-
-    def __new_probs_panel(self, parent):
-        panel = ScrolledPanel(parent)
+        self.__gate_mediator.set_probs_panel(self)
+        # panel = ScrolledPanel(parent)
+        self.__fig_canvas = None
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(20)
-        sizer.Add(new_big_font_label(panel, "State of the register"), 0, wx.CENTER)
+        sizer.Add(new_big_font_label(self, "State of the register"), 0, wx.CENTER)
         sizer.AddSpacer(20)
-        self.__probs_area = wx.TextCtrl(panel, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER)
+        self.__probs_area = wx.TextCtrl(self, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER)
         self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
         sizer.Add(self.__probs_area, 0, wx.EXPAND)
-        sizer.Add(self.__qubit_state_argand(panel), wx.CENTER, wx.EXPAND)
+        sizer.Add(self.__qubit_state_argand(self), wx.CENTER, wx.EXPAND)
         sizer.Layout()
-        panel.SetSizer(sizer)
-        panel.SetupScrolling()
-        return panel
+        self.__root_sizer = sizer
+        self.SetSizer(sizer)
+        self.SetupScrolling()
 
     def __qubit_state_argand(self, panel):
         fig = plt.figure(ARGAND_FIGURE_ID, figsize=(3., 3.))
         self.__visualize_complex(0+0j)
-        return FigureCanvas(panel, -1, fig)
+        self.__fig_canvas = FigureCanvas(panel, -1, fig)
+        return self.__fig_canvas
 
     def __visualize_complex(self, x):
         plt.figure(ARGAND_FIGURE_ID)
@@ -142,12 +126,57 @@ class CircuitInspector(wx.SplitterWindow):
         for i, x in enumerate(xval):
             plt.polar([0, x], [0, 1], marker=',', c=RGB_tuples[i])  # first are angles, second are rs
 
-    def __bind(self):
-        self.Bind(wx.EVT_SPLITTER_DCLICK, self.__dev_null)
-        self.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.__dev_null)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.__dev_null)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.__dev_null)
-        self.Bind(wx.EVT_SPLITTER_UNSPLIT, self.__dev_null)
+    def show_partially(self):
+        self.__probs_area.Hide()
+        self.__fig_canvas.Hide()
+        self.__root_sizer.Layout()
+        self.Show()
+
+    def show_fully(self):
+        self.__probs_area.Show()
+        self.__fig_canvas.Show()
+        self.__root_sizer.Layout()
+        self.Show()
+
+
+class CircuitInspector(wx.SplitterWindow):
+
+    def __init__(self, parent, gate_mediator, quantum_computer):
+        wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(450, 1000))
+        self.__quantum_computer = quantum_computer
+        self.__gate_mediator = gate_mediator
+        gate_mediator.set_circuit_inspector(self)
+        self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
+        self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
+        self.__sash_pos = 800
+        self.SetSashPosition(self.__sash_pos)
+        self.__should_show = False
+        self.Bind(wx.EVT_SIZE, self.onresize)
+        self.__timer = wx.Timer(self.__bloch_canvas)
+        self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
+        self.__bind(self)
+
+    def __new_probs_history_splitter(self):
+        probs_history_splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
+        history_panel = HistoryPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
+        gateinsp_probs_splitter = self.__new_gateinsp_probs_splitter(probs_history_splitter)
+        probs_history_splitter.SplitHorizontally(gateinsp_probs_splitter, history_panel, 375)
+        return probs_history_splitter
+
+    def __new_gateinsp_probs_splitter(self, probs_history_splitter):
+        gateinsp_probs_splitter = wx.SplitterWindow(probs_history_splitter, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
+        probs_panel = ProbsPanel(gateinsp_probs_splitter, self.__gate_mediator, self.__quantum_computer)  # wx.Panel(gateinsp_probs_splitter)
+        gate_inspector_panel = GateInspectorPanel(gateinsp_probs_splitter, self.__gate_mediator)
+        gateinsp_probs_splitter.SplitVertically(gate_inspector_panel, probs_panel, 1)
+        self.__bind(gateinsp_probs_splitter)
+        return gateinsp_probs_splitter
+
+    def __bind(self, splitter):
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, self.__dev_null)
+        splitter.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.__dev_null)
+        splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.__dev_null)
+        splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.__dev_null)
+        splitter.Bind(wx.EVT_SPLITTER_UNSPLIT, self.__dev_null)
 
     def __dev_null(self, event):
         event.Veto()
@@ -156,7 +185,7 @@ class CircuitInspector(wx.SplitterWindow):
         nqubits = self.__quantum_computer.circuit_qubits_number()
         self.__should_show = nqubits == 1
         self.__timer.Start(20)
-        self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
+        # self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
 
     def __show_bloch(self, event):
         if not self.__should_show:
@@ -175,10 +204,4 @@ class CircuitInspector(wx.SplitterWindow):
     def onresize(self, ev):
         self.__bloch_canvas.initSize()
         ev.Skip()
-
-    def setInspector(self, inspector):
-        self.inspector = inspector
-
-    def destroy(self):
-        self.inspector = None
 

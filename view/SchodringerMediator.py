@@ -199,7 +199,8 @@ class SchodringerMediator:
         self.__reset_state()
 
     def __visualize_hamiltonian(self):
-        if not self.__schodringer_experiment:
+        should_show = self.__quantum_computer.circuit_qubits_number() == 1
+        if not should_show:
             return
         coefficient = self.__coefficient_input.get_coefficient()
         h = self.__schodringer_experiment.get_hamiltonian(coefficient)
