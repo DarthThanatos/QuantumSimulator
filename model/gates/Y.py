@@ -10,3 +10,6 @@ class YGate(Gate):
 
     def get_name(self):
         return Y
+
+    def latex_symbol(self):
+        return "Y"

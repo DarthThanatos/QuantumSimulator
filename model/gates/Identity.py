@@ -11,3 +11,6 @@ class Identity(Gate):
 
     def get_name(self):
         return IDENTITY
+
+    def latex_symbol(self):
+        return "I"

@@ -32,6 +32,7 @@ class CircuitPanel(wx.Panel):
         self.multiqbitPlacer = MultiqbitGatePlacer(self, self.__quantum_computer)
         self.gatePlacer = GatePlacer(self, gate_mediator, self.__quantum_computer)
         self.gateName = None
+        self.gate_copy = None
         self.showDeleteMsg = False
         self.gateMediator = gate_mediator
         self.__qbit_register_views = []
@@ -69,7 +70,7 @@ class CircuitPanel(wx.Panel):
         if self.__mouse_inside_simulation_area(event): return
         m_x, m_y = event.GetPosition()
         if self.gateName is not None:
-            self.gatePlacer.placeGate(m_x,m_y)
+            self.gatePlacer.placeGate(m_x,m_y, self.gate_copy)
         selectedGateTile = self.detectGateSelection(m_x, m_y)
         if selectedGateTile is not None:
             self.__gate_mediator.inspect_gate(selectedGateTile, self.__quantum_computer)
@@ -217,9 +218,10 @@ class CircuitPanel(wx.Panel):
         y = self.getH(qbitAreaOnly=True)
         dc.DrawTextList("Drop here to delete this gate", [(x, y)], [wx.BLUE])
 
-    def stimula(self, shouldStimulate, gateName=None):
-        self.gateName = gateName
+    def stimula(self, shouldStimulate, gate_name=None, gate_copy=None):
+        self.gateName = gate_name
         self.shouldStimulate = shouldStimulate
+        self.gate_copy = gate_copy
         self.Refresh()
 
     def __enable_qubits_register_view(self):

@@ -1,5 +1,8 @@
 import wx
+from qutip import Qobj
 
+from util.Utils import to_bin_str
+import numpy as np
 
 class GateMediator:
 
@@ -73,14 +76,15 @@ class GateMediator:
     def stop_inspecting_gate(self):
         self.__probs_panel.show_fully()
 
-    def gateSelected(self, gate):
-        # called when a view representing a gate has been clicked
-        self.__circuit_view.stimula(True, gate)
+    def gateSelected(self, gate_name, gate_copy=None):
+        # called when a view representing a gate has been clicked or when a copy of existing gate has been made
+        self.__frame.SetCursor(wx.Cursor(wx.Image('../Images/Palette/{}.png'.format(gate_name))))
+        self.__circuit_view.stimula(True, gate_name, gate_copy)
 
     def gateUnselected(self):
         # called when signalization of a gate selection is no longer valid
         self.__frame.SetCursor(wx.NullCursor)
-        self.__circuit_view.stimula(False)
+        self.__circuit_view.stimula(False, gate_name=None, gate_copy=None)
 
     def register_changed(self):
         # called when qubit is added or removed, a step (or steps) in simulation is(are) performed,
@@ -90,9 +94,11 @@ class GateMediator:
         self.__bloch_canvas.reset_view()
         self.__schodringer_mediator.register_changed()
 
-    def circuit_grid_changed(self):
+    def circuit_grid_changed(self, removed_gate=False):
         # called when a gate is freshly added, completely removed, or an existing gate changed its position
         self.__schodringer_mediator.circuit_grid_changed()
+        if removed_gate:
+            self.__gate_inspector_panel.on_close()
 
     def run_in_console(self, quantum_computer):
         # called when "run in console" button was clicked
@@ -135,3 +141,18 @@ class GateMediator:
         # called before a window is legally executed,
         # it lets perform cleanup (thread-related or other) before application exits
         self.__tree.stop_observer()
+
+    def current_psi_representation(self, quantum_computer):
+        psi = quantum_computer.current_simulation_psi()
+        nqubits = quantum_computer.circuit_qubits_number()
+        representation = []
+        for existing_state in psi.data.tocoo().row:
+            binS = to_bin_str(existing_state, nqubits)
+            amplitude = psi.data[existing_state, 0]
+            probability = np.abs(amplitude) ** 2
+            valueS = "|{}>".format(existing_state)
+            qubitsS = "|{}>".format(binS)
+            probabilityS = "{:.2f}".format(probability)
+            amplitudeS = "{:.2f}".format(amplitude)
+            representation.append((valueS, qubitsS, probabilityS, amplitudeS))
+        return representation

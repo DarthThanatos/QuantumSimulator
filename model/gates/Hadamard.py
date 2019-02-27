@@ -9,3 +9,14 @@ class HadamardGate(Gate):
 
     def get_name(self):
         return H
+
+    def latex_symbol(self):
+        return "H"
+
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{\frac{1}{\sqrt{2}}}{\frac{1}{\sqrt{2}}}' \
+            r'\,\,\,' \
+            r' \stackrel{\frac{1}{\sqrt{2}}}{-\frac{1}{\sqrt{2}}} ' \
+            r'\right]'

@@ -3,12 +3,13 @@ from util.Utils import get_screen_middle_point, flatten_dicts, newIconButton, In
 import wx
 
 from view.constants import INSPECTOR_MATRIX_FIGURE_ID
+from wx.lib.scrolledpanel import ScrolledPanel
 
 
 class ParameterMediator:
 
     def __init__(self, gate):
-        self.__gate = gate
+        self._gate = gate
         self.__parameters_views = []
         self.__parameters_frame = None
         self.__apply_button = None
@@ -23,13 +24,13 @@ class ParameterMediator:
     def setup_gate_error_log(self, log):
         self.__gate_error_log = log
         kwargs = self.__get_gate_kwargs()
-        if not self.__gate.is_gate_correct(kwargs):
-            log.SetLabelText(self.__gate.why_gate_not_correct(kwargs))
+        if not self._gate.is_gate_correct(kwargs):
+            log.SetLabelText(self._gate.why_gate_not_correct(kwargs))
 
     def setup_apply_button(self, apply_btn):
         self.__apply_button = apply_btn
         kwargs = self.__get_gate_kwargs()
-        apply_btn.Enable(self.__gate.is_gate_correct(kwargs))
+        apply_btn.Enable(self._gate.is_gate_correct(kwargs))
 
     def add_parameter_view(self, parameter_view):
         self.__parameters_views.append(parameter_view)
@@ -37,9 +38,9 @@ class ParameterMediator:
     def parameter_input_changed(self, parameter_view):
         input_value = parameter_view.parameter_input.GetValue()
         param_name = parameter_view.get_parameter_name()
-        correct = self.__gate.is_parameter_correct(param_name, input_value)
+        correct = self._gate.is_parameter_correct(param_name, input_value)
         if not correct:
-            error = self.__gate.why_is_parameter_incorrect(param_name, input_value)
+            error = self._gate.why_is_parameter_incorrect(param_name, input_value)
             parameter_view.change_error_log(
                 foreground_color=wx.WHITE,
                 background_color=wx.RED,
@@ -51,17 +52,33 @@ class ParameterMediator:
 
     def __on_parameter_input_changed(self):
         kwargs = self.__get_gate_kwargs()
-        self.__apply_button.Enable(self.__gate.is_gate_correct(kwargs))
+        self.__apply_button.Enable(self._gate.is_gate_correct(kwargs))
         error_msg = \
-            self.__gate.why_gate_not_correct(kwargs) \
-            if not self.__gate.is_gate_correct(kwargs) \
+            self._gate.why_gate_not_correct(kwargs) \
+            if not self._gate.is_gate_correct(kwargs) \
             else ""
         self.__gate_error_log.SetLabelText(error_msg)
         self.__parameters_frame.layout()
 
     def on_apply(self):
         for name, value in self.__get_gate_kwargs().items():
-            self.__gate.set_parameter_value(name, value)
+            self._gate.set_parameter_value(name, value)
+
+
+class GateInspectorMediator(ParameterMediator):
+    def __init__(self, gate, gate_mediator):
+        ParameterMediator.__init__(self, gate)
+        self.__gate_mediator = gate_mediator
+        self.__matrix_panel = None
+
+
+    def set_matrix_panel(self, matrix_panel):
+        self.__matrix_panel = matrix_panel
+
+    def on_apply(self):
+        super().on_apply()
+        self.__matrix_panel.change_matrix_value(self._gate.qutip_object().full())
+        self.__gate_mediator.circuit_grid_changed()
 
 
 OK_CANCEL_STYLE = 0
@@ -237,10 +254,10 @@ class ParametersDialog(wx.Dialog):
         self.EndModal(wx.CANCEL)
 
 
-class GateInspectorPanel(wx.Panel):
+class GateInspectorPanel(ScrolledPanel):
 
     def __init__(self, splitter_parent, gate_mediator):
-        wx.Panel.__init__(self, splitter_parent)
+        ScrolledPanel.__init__(self, splitter_parent)
         self.__gate_mediator = gate_mediator
         self.__gate_mediator.set_gate_inspector_panel(self)
         self.__root_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -250,7 +267,9 @@ class GateInspectorPanel(wx.Panel):
         self.Bind(wx.EVT_TIMER, self.__animate_showing, self.__timer)
         self.__should_show = False
         self.__gate = None
+        self.__gate_inspector_mediator = None
         self.SetBackgroundColour(wx.WHITE)
+        self.SetupScrolling()
 
     def reset_view(self, gate):
         self.__gate = gate
@@ -263,29 +282,33 @@ class GateInspectorPanel(wx.Panel):
         self.__root_sizer.Add(self.__new_matrix_panel(gate), 0, wx.CENTER)
         self.__root_sizer.Add(self.__new_copy_gate_btn(), 0, wx.CENTER)
         self.__root_sizer.Layout()
+        self.SetupScrolling()
         self.Thaw()
 
     def __new_copy_gate_btn(self):
         return newStandardButton(self, (125, 25), "copy gate", self.__on_copy)
 
     def __on_copy(self, _):
-        print("copying ", self.__gate)
+        self.__gate_mediator.gateSelected(self.__gate.get_name(), self.__gate)
 
     def __new_matrix_panel(self, gate):
         try:
             gate_matrix = gate.qutip_object().full()
         except:
             return wx.Panel(self)
-        return InspectorMatrixPanel(self, gate.latex_symbol(), gate_matrix, INSPECTOR_MATRIX_FIGURE_ID, gate.latex_matrix_str())
+        matrix_panel = InspectorMatrixPanel(self, gate.latex_symbol(), gate_matrix, INSPECTOR_MATRIX_FIGURE_ID, gate.latex_matrix_str())
+        if self.__gate_inspector_mediator is not None:
+            self.__gate_inspector_mediator.set_matrix_panel(matrix_panel)
+        return matrix_panel
 
     def __new_close_button(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn = newIconButton(self, (32, 32), '../images/icons/close_icon.png', self.__on_close)
+        btn = newIconButton(self, (32, 32), '../images/icons/close_icon.png', self.on_close)
         sizer.Add(wx.Panel(self), 5)
         sizer.Add(btn, 1)
         return sizer
 
-    def __on_close(self, _):
+    def on_close(self, event=None):
         self.__show_inspector(False)
 
     def __new_parameters_panel(self, gate):
@@ -294,8 +317,8 @@ class GateInspectorPanel(wx.Panel):
         if len(params_names) == 0:
             return wx.Panel(self)
         params_defaults = gate.parameters()
-        mediator = ParameterMediator(gate)
-        panel = ParametersPanel(self, gate_name, params_names, params_defaults, mediator, style=APPLY_STYLE)
+        self.__gate_inspector_mediator = GateInspectorMediator(gate, self.__gate_mediator)
+        panel = ParametersPanel(self, gate_name, params_names, params_defaults, self.__gate_inspector_mediator, style=APPLY_STYLE)
         return panel
 
     def on_ok(self):

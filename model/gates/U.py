@@ -77,3 +77,6 @@ class UGate(Gate):
         for i, param_name in enumerate(parameters_names):
             parameters[param_name] = str(matrix[i])
         return parameters
+
+    def latex_symbol(self):
+        return "U"

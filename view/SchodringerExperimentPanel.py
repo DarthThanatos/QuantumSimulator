@@ -218,21 +218,25 @@ class SchodringerExperimentPanel(wx.Panel):
 
     def __new_destroy_checkbox(self):
         destroy = wx.CheckBox(self, label="Destroy")
+        destroy.SetValue(True)
         self.__schodringer_mediator.set_destroy_checkbox(destroy)
         return destroy
 
     def __new_x_checkbox(self):
         x_checkbox = wx.CheckBox(self, label="X expectation")
+        x_checkbox.SetValue(True)
         self.__schodringer_mediator.set_x_checkbox(x_checkbox)
         return x_checkbox
 
     def __new_y_checkbox(self):
         y_checkbox = wx.CheckBox(self, label="Y expectation")
+        y_checkbox.SetValue(True)
         self.__schodringer_mediator.set_y_checkbox(y_checkbox)
         return y_checkbox
 
     def __new_z_checkbox(self):
         z_checkbox = wx.CheckBox(self, label="Z expectation")
+        z_checkbox.SetValue(True)
         self.__schodringer_mediator.set_z_checkbox(z_checkbox)
         return z_checkbox
 

@@ -1,7 +1,7 @@
 import wx
 import wx.lib.newevent
 from util.Utils import mouse_to_grid_coordinates
-from view.ParametersDialog import ParametersDialog, ParameterMediator, APPLY_STYLE
+from view.ParametersDialog import ParametersDialog, ParameterMediator
 from view.constants import *
 
 
@@ -13,12 +13,16 @@ class GatePlacer:
         self.__quantum_computer = quantum_computer
         self.__parameters_dialog = None
 
-    def placeGate(self, m_x, m_y):
+    def placeGate(self, m_x, m_y, gate_copy):
         if self.__circuit.getW() > m_x > 2 * GATE_SIZE:
             if self.__circuit.getH(qbitAreaOnly=True) > m_y > 0:
                 i,j = mouse_to_grid_coordinates(m_x, m_y)
                 if self.__quantum_computer.can_add_gate_at(i, j):
-                    self.__query_gate_parameters(self.__circuit.gateName, i, j)
+                    if gate_copy is not None:
+                        self.__quantum_computer.copy_gate_at(i, j, gate_copy)
+                        self.__gate_mediator.circuit_grid_changed()
+                    else:
+                        self.__query_gate_parameters(self.__circuit.gateName, i, j)
         self.__gate_mediator.gateUnselected()
         self.__circuit.resetView()
 

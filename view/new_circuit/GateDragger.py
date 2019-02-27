@@ -70,7 +70,7 @@ class GateDragger:
              m_y >= self.circuit.getH(qbitAreaOnly=True) or m_y < 0:
                 self.draggedGateTile = None
                 self.circuit.resetView()
-                self.__gate_mediator.circuit_grid_changed()
+                self.__gate_mediator.circuit_grid_changed(removed_gate=True)
                 return
         self.quantumComputer.recreate_gate_at(i, j, removed_gate)
         self.__gate_mediator.circuit_grid_changed()

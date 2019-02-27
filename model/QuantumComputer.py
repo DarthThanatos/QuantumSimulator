@@ -17,6 +17,9 @@ class QuantumComputer:
         self.__circuit.update_schodringer_experiments()
         self.__quantum_walk = QuantumWalk()
 
+    def copy_gate_at(self,i, j, gate_copy):
+        return self.__circuit.copy_gate_at(i,j,gate_copy)
+
     def get_gate_at(self, i, j):
         return self.__circuit.get_gate_at(i, j)
 
@@ -54,16 +57,6 @@ class QuantumComputer:
 
     def current_simulation_psi(self):
         return self.__circuit.current_simulation_psi()
-
-    def current_simulation_psi_str(self):
-        psi = self.current_simulation_psi()
-        str_psi = ""
-        for existing_state in psi.data.tocoo().row:
-            binS = to_bin_str(existing_state, self.circuit_qubits_number())
-            amplitude = psi.data[existing_state, 0]
-            probability = np.abs(amplitude) ** 2
-            str_psi += "|{0}> |{1}>: prob: {2:.2f} ampl: {3:.2f}\n".format(existing_state, binS, probability, amplitude)
-        return str_psi
 
     def initial_register_ket(self):
         return self.__circuit.initial_register_ket()

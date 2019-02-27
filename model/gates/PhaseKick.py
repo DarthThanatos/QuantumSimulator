@@ -36,3 +36,13 @@ class PhaseKickGate(Gate):
     @staticmethod
     def stringified_parameters_from(angle):
         return {PhaseKickGate.PHASE_ANGLE: str(angle)}
+
+    def latex_symbol(self):
+        return "K"
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{1}{0}' \
+            r'\,\,\,' \
+            r' \stackrel{0}{e^{i \phi}} ' \
+            r'\right]'

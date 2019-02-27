@@ -13,3 +13,13 @@ class CPhaseKickGate(CPhaseKick):
 
     def get_name(self):
         return C_PHASE_KICK
+
+    def latex_symbol(self):
+        return r'\theta_k'
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{1}{0}' \
+            r'\,\,\,' \
+            r' \stackrel{0}{e^{\frac{i \pi}{2^k}}} ' \
+            r'\right]'

@@ -8,8 +8,10 @@ from qutip import Bloch
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib.pyplot as plt
+import wx.grid
 
 from view.ParametersDialog import GateInspectorPanel
+from view.ProbabilitiesTable import ProbabilitiesTable
 
 
 class BlochCanvas(wx.ScrolledWindow):
@@ -84,6 +86,35 @@ class HistoryPanel(ScrolledPanel):
         self.__create_new_history_view()
 
 
+class ProbsPanelMediator:
+
+    def __init__(self, probs_panel):
+        self.__probs_panel = probs_panel
+        self.__argand_panel = None
+        self.__probabilities_table = None
+
+    def set_argand_panel(self, argand_panel):
+        self.__argand_panel = argand_panel
+
+    def set_probabilities_table(self, probabilities_table):
+        self.__probabilities_table = probabilities_table
+
+    def show_partially(self):
+        self.__probabilities_table.Hide()
+        self.__argand_panel.Hide()
+        self.__probs_panel.layout()
+        self.__probs_panel.Show()
+
+    def show_fully(self):
+        self.__probabilities_table.Show()
+        self.__argand_panel.Show()
+        self.__probs_panel.layout()
+        self.__probs_panel.Show()
+
+    def visualise_amplitude(self, amplitude):
+        self.__probs_panel.visualize_complex(amplitude)
+
+
 class ProbsPanel(ScrolledPanel):
 
     def __init__(self, parent, gate_mediator, quantum_computer):
@@ -91,52 +122,78 @@ class ProbsPanel(ScrolledPanel):
         self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
         self.__gate_mediator.set_probs_panel(self)
-        # panel = ScrolledPanel(parent)
-        self.__fig_canvas = None
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.AddSpacer(20)
-        sizer.Add(new_big_font_label(self, "State of the register"), 0, wx.CENTER)
-        sizer.AddSpacer(20)
-        self.__probs_area = wx.TextCtrl(self, style=wx.TE_READONLY | wx.TE_CENTRE | wx.TE_MULTILINE | wx.NO_BORDER)
-        self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
-        sizer.Add(self.__probs_area, 0, wx.EXPAND)
-        sizer.Add(self.__qubit_state_argand(self), wx.CENTER, wx.EXPAND)
-        sizer.Layout()
-        self.__root_sizer = sizer
-        self.SetSizer(sizer)
+        self.__probabilities_mediator = ProbsPanelMediator(self)
+        self.__root_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.__argand_vector_base = None
+        self.__argand_vector_arrow = None
+        self.__argand_background_drawn = False
+        self.__init_root_sizer()
+        self.SetSizer(self.__root_sizer)
         self.SetupScrolling()
 
+    def reset_view(self):
+        self.Freeze()
+        self.DestroyChildren()
+        self.__root_sizer.Clear()
+        self.__init_root_sizer()
+        self.Refresh()
+        self.Thaw()
+        self.SetupScrolling()
+
+    def __init_root_sizer(self):
+        self.__root_sizer.AddSpacer(20)
+        self.__root_sizer.Add(new_big_font_label(self, "State of the register"), 0, wx.CENTER)
+        self.__root_sizer.AddSpacer(20)
+        self.__root_sizer.Add(self.__new_probabilities_table(), 0, wx.EXPAND)
+        self.__root_sizer.Add(self.__qubit_state_argand(self), wx.CENTER, wx.EXPAND)
+        self.__root_sizer.Layout()
+
+    def __new_probabilities_table(self):
+        representation = self.__gate_mediator.current_psi_representation(self.__quantum_computer)
+        probabilities_table = ProbabilitiesTable(self,  representation, self.__probabilities_mediator)
+        self.__probabilities_mediator.set_probabilities_table(probabilities_table)
+        return probabilities_table
+
     def __qubit_state_argand(self, panel):
-        fig = plt.figure(ARGAND_FIGURE_ID, figsize=(3., 3.))
-        self.__visualize_complex(0+0j)
-        self.__fig_canvas = FigureCanvas(panel, -1, fig)
-        return self.__fig_canvas
-
-    def __visualize_complex(self, x):
-        plt.figure(ARGAND_FIGURE_ID)
+        fig = plt.figure(ARGAND_FIGURE_ID, figsize=(2., 2.))
+        argand_panel = FigureCanvas(panel, -1, fig)
         self.__palette()
-        plt.polar([0, np.angle(x)], [0, 1], marker=',', c=[0,0,0])
-        plt.polar(np.angle(x), 1, marker=10, c=[0,0,0])
+        self.__probabilities_mediator.set_argand_panel(argand_panel)
+        return argand_panel
 
-    def __palette(self):
-        xval = np.arange(0, 2 * pi, 0.01)
-        N = len(xval)
-        HSV_tuples = [(x*1.0/N, 0.5, 0.5) for x in range(N)]
-        RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
-        for i, x in enumerate(xval):
-            plt.polar([0, x], [0, 1], marker=',', c=RGB_tuples[i])  # first are angles, second are rs
+    def visualize_complex(self, x):
+        fig = plt.figure(ARGAND_FIGURE_ID)
+        self.__remove_previous_argand_pointer()
+        self.__argand_vector_base = plt.polar([0, np.angle(x)], [0, 1], marker=',', c=[0,0,0])[0]
+        self.__argand_vector_arrow = plt.polar(np.angle(x), 1, marker=10, c=[0,0,0])[0]
+        fig.canvas.draw()
+
+    def __palette(self,):
+        if not self.__argand_background_drawn:
+            xval = np.arange(0, 2 * pi, 0.017)
+            N = len(xval)
+            HSV_tuples = [(x*1.0/N, 0.5, 0.5) for x in range(N)]
+            RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
+            for i, x in enumerate(xval):
+                plt.polar([0, x], [0, 1], marker=',', c=RGB_tuples[i])  # first are angles, second are rs
+            self.__argand_background_drawn = True
+        self.__remove_previous_argand_pointer()
+
+    def __remove_previous_argand_pointer(self):
+        if self.__argand_vector_base:
+            self.__argand_vector_base.remove()
+            self.__argand_vector_arrow.remove()
+            self.__argand_vector_arrow = None
+            self.__argand_vector_base = None
+
+    def layout(self):
+        self.__root_sizer.Layout()
 
     def show_partially(self):
-        self.__probs_area.Hide()
-        self.__fig_canvas.Hide()
-        self.__root_sizer.Layout()
-        self.Show()
+        self.__probabilities_mediator.show_partially()
 
     def show_fully(self):
-        self.__probs_area.Show()
-        self.__fig_canvas.Show()
-        self.__root_sizer.Layout()
-        self.Show()
+        self.__probabilities_mediator.show_fully()
 
 
 class CircuitInspector(wx.SplitterWindow):
@@ -146,11 +203,12 @@ class CircuitInspector(wx.SplitterWindow):
         self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
         gate_mediator.set_circuit_inspector(self)
+        self.__probs_panel = None
         self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
         self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
         self.__sash_pos = 800
         self.SetSashPosition(self.__sash_pos)
-        self.__should_show = False
+        self.__should_show_bloch = False
         self.Bind(wx.EVT_SIZE, self.onresize)
         self.__timer = wx.Timer(self.__bloch_canvas)
         self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
@@ -165,10 +223,11 @@ class CircuitInspector(wx.SplitterWindow):
 
     def __new_gateinsp_probs_splitter(self, probs_history_splitter):
         gateinsp_probs_splitter = wx.SplitterWindow(probs_history_splitter, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
-        probs_panel = ProbsPanel(gateinsp_probs_splitter, self.__gate_mediator, self.__quantum_computer)  # wx.Panel(gateinsp_probs_splitter)
+        probs_panel = ProbsPanel(gateinsp_probs_splitter, self.__gate_mediator, self.__quantum_computer)
         gate_inspector_panel = GateInspectorPanel(gateinsp_probs_splitter, self.__gate_mediator)
         gateinsp_probs_splitter.SplitVertically(gate_inspector_panel, probs_panel, 1)
         self.__bind(gateinsp_probs_splitter)
+        self.__probs_panel = probs_panel
         return gateinsp_probs_splitter
 
     def __bind(self, splitter):
@@ -183,12 +242,12 @@ class CircuitInspector(wx.SplitterWindow):
 
     def reset_view(self):
         nqubits = self.__quantum_computer.circuit_qubits_number()
-        self.__should_show = nqubits == 1
+        self.__should_show_bloch = nqubits == 1
         self.__timer.Start(20)
-        # self.__probs_area.SetValue(self.__quantum_computer.current_simulation_psi_str())
+        self.__probs_panel.reset_view()
 
     def __show_bloch(self, event):
-        if not self.__should_show:
+        if not self.__should_show_bloch:
             if self.__sash_pos < 800:
                 self.__sash_pos += 40
             else:

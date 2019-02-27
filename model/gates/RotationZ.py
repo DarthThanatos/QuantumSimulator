@@ -17,3 +17,13 @@ class RotationZGate(Rotation):
     @staticmethod
     def axis():
         return Z
+
+    def latex_symbol(self):
+        return "R_z"
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{e^{-i \frac{\phi}{2}}}{0}' \
+            r'\,\,\,' \
+            r' \stackrel{0}{e^{i \frac{\phi}{2}}} ' \
+            r'\right]'

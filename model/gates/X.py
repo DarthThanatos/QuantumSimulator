@@ -9,3 +9,6 @@ class XGate(Gate):
 
     def get_name(self):
         return X
+
+    def latex_symbol(self):
+        return "X"

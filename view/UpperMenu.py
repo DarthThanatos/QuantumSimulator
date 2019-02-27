@@ -81,9 +81,12 @@ class UpperMenu(wx.MDIChildFrame):
         self.SetFocus()
         event.Skip()
 
+
 class PanelPalettePage(wx.Panel):
+
     buttonSep = 11
     buttonBorder = 7
+
     def __init__(self, parent, name, bitmapPath, palette, gateMediator):
         # default size provided for better sizing on GTK where notebook page
         # size isn't available at button creation time
@@ -132,7 +135,6 @@ class PanelPalettePage(wx.Panel):
     def addGateButton(self, name, btnType):
         def gate_btn_fun(event):
             self.gateMediator.gateSelected(name)
-            self.GetParent().GetParent().GetParent().SetCursor(wx.Cursor(wx.Image('../Images/Palette/{}.png'.format(name))))
         mID = PanelPalettePage.addButton(self, name, gate_btn_fun, btnType)
 
         return mID

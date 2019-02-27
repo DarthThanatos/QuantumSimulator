@@ -37,3 +37,13 @@ class PhaseScaleGate(Gate):
     @staticmethod
     def stringified_parameters_from(angle):
         return {PhaseScaleGate.PHASE_ANGLE: str(angle)}
+
+    def latex_symbol(self):
+        return r'\theta'
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{e^{i \phi}}{0}' \
+            r'\,\,\,' \
+            r' \stackrel{0}{e^{i \phi}} ' \
+            r'\right]'

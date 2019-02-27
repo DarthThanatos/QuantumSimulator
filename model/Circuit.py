@@ -84,6 +84,9 @@ class Circuit:
     def recreate_gate_at(self, i, j, gate):
         return self.add_gate(i, j, gate.get_name(), gate.parameters())
 
+    def copy_gate_at(self, i, j, gate_copy):
+        return self.add_gate(i, j, gate_copy.get_name(), gate_copy.parameters())
+
     def circuit_qubits_number(self):
         return self.__register.nqubits
 
@@ -336,3 +339,4 @@ class Circuit:
         grid_i = self.__grid.get(i, None)
         if grid_i is not None:
             return grid_i.get(j, None)
+

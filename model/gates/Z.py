@@ -10,3 +10,6 @@ class ZGate(Gate):
 
     def get_name(self):
         return Z
+
+    def latex_symbol(self):
+        return "Z"

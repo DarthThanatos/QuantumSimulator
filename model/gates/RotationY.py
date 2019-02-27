@@ -17,3 +17,13 @@ class RotationYGate(Rotation):
     @staticmethod
     def axis():
         return Y
+
+    def latex_symbol(self):
+        return "R_y"
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{cos (\frac{\phi}{2})}{-sin (\frac{\phi}{2})}' \
+            r'\,\,\,' \
+            r' \stackrel{sin (\frac{\phi}{2})}{cos (\frac{\phi}{2})} ' \
+            r'\right]'

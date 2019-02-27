@@ -206,7 +206,7 @@ class CenteredTextLatexPanel(wx.Panel):
 class MatrixPanel(CenteredTextLatexPanel):
     def __init__(self, parent, matrix, fig_numer):
         self.__matrix = matrix
-        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (4., .75))
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (5., .75))
 
     def _prepare_text(self):
         matrix = self.__matrix

@@ -11,3 +11,13 @@ class SqrtXGate(Gate):
 
     def get_name(self):
         return SQRT_X
+
+    def latex_symbol(self):
+        return r'\sqrt{X}'
+
+    def latex_matrix_str(self):
+        return r' \left[' \
+            r' \stackrel{\frac{1+i}{2}}{\frac{1-i}{2}}' \
+            r'\,\,\,' \
+            r' \stackrel{\frac{1-i}{2}}{\frac{1+i}{2}} ' \
+            r'\right]'
