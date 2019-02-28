@@ -80,6 +80,6 @@ class ExperimentHistory:
             self.__circuit_experiments.__delitem__(index)
         if self.__schodringer_experiments.__contains__(index):
             self.__schodringer_experiments.__delitem__(index)
-        if self.__circuit_experiments.keys().__len__() == 1:
+        if index == self.__current_experment_index:
             key = list(self.__circuit_experiments.keys())[0]
             self.restore_circuit_experiment(key)
