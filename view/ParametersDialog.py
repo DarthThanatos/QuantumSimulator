@@ -1,5 +1,6 @@
 from model.gates.U import UGate
-from util.Utils import get_screen_middle_point, flatten_dicts, newIconButton, InspectorMatrixPanel, newStandardButton
+from util.Utils import get_screen_middle_point, flatten_dicts, newIconButton, InspectorMatrixPanel, newStandardButton, \
+    ImgPanel
 import wx
 
 from view.constants import INSPECTOR_MATRIX_FIGURE_ID
@@ -277,7 +278,8 @@ class GateInspectorPanel(ScrolledPanel):
         self.DestroyChildren()
         self.__root_sizer.Clear()
         self.__root_sizer.Add(self.__new_close_button(), 0, wx.EXPAND)
-        self.__root_sizer.Add(self.__new_parameters_panel(gate))
+        self.__root_sizer.AddSpacer(0 if len(gate.get_parameters_names()) != 0 else 40)
+        self.__root_sizer.Add(self.__new_parameters_panel(gate), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(10)
         self.__root_sizer.Add(self.__new_matrix_panel(gate), 0, wx.CENTER)
         self.__root_sizer.Add(self.__new_copy_gate_btn(), 0, wx.CENTER)
@@ -315,7 +317,7 @@ class GateInspectorPanel(ScrolledPanel):
         gate_name = gate.get_name()
         params_names = gate.get_parameters_names()
         if len(params_names) == 0:
-            return wx.Panel(self)
+            return ImgPanel(self, "../images/palette/{}.png".format(gate.get_name()),(100, 100))
         params_defaults = gate.parameters()
         self.__gate_inspector_mediator = GateInspectorMediator(gate, self.__gate_mediator)
         panel = ParametersPanel(self, gate_name, params_names, params_defaults, self.__gate_inspector_mediator, style=APPLY_STYLE)

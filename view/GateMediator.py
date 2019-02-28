@@ -119,6 +119,17 @@ class GateMediator:
         self.__editor.switch_to_circuit_view()
         self.__schodringer_mediator.experiment_changed()
 
+    def history_changed(self):
+        # called on rename experiment
+        self.__history_panel.reset_view()
+
+    def experiment_deleted(self):
+        self.__circuit_view.resetView()
+        self.__circuit_inspector.reset_view()
+        self.__bloch_canvas.reset_view()
+        self.__history_panel.reset_view()
+        self.__schodringer_mediator.experiment_changed()
+
     def experiment_changed(self):
         # called when one of the experiment history buttons were clicked
         self.__circuit_view.resetView()

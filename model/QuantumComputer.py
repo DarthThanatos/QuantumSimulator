@@ -17,6 +17,12 @@ class QuantumComputer:
         self.__circuit.update_schodringer_experiments()
         self.__quantum_walk = QuantumWalk()
 
+    def remove_experiment(self, index):
+        self.__experiment_history.remove_experiment(index)
+
+    def rename_experiment(self, index, new_name):
+        self.__experiment_history.rename_experiment(index, new_name)
+
     def copy_gate_at(self,i, j, gate_copy):
         return self.__circuit.copy_gate_at(i,j,gate_copy)
 

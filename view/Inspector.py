@@ -43,26 +43,115 @@ class BlochCanvas(wx.ScrolledWindow):
         self.figure.set_size_inches( (w / ppiw, w / ppiw))
 
 
-class RestoreExperimentButton(wx.Button):
+class ExperimentMediator:
 
-    def __init__(self, parent, label, experiment_index, gate_mediator, quantum_computer):
-        wx.Button.__init__(self, parent, label = label, size=(-1, 50))
+    def __init__(self, history_panel, gate_mediator, quantum_computer):
+        self.__history_panel = history_panel
         self.__gate_mediator = gate_mediator
-        self.__experiment_index = experiment_index
         self.__quantum_computer = quantum_computer
+
+    def on_restore(self, restore_button):
+        experiment_index = restore_button.experiment_index()
+        self.__quantum_computer.restore_experiment_at(experiment_index)
+        self.__gate_mediator.experiment_changed()
+
+    def on_delete(self, delete_button):
+        experiment_index = delete_button.experiment_index()
+        try:
+            self.__quantum_computer.remove_experiment(experiment_index)
+            self.__gate_mediator.experiment_deleted()
+        except Exception as e:
+            wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
+
+    def on_rename(self, rename_button):
+        dlg = wx.TextEntryDialog(self.__history_panel, 'New experiment name', 'New name for experiment with id {}'.format(rename_button.experiment_index()))
+        dlg.SetValue("")
+        dlg.SetMaxLength(10)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.__quantum_computer.rename_experiment(rename_button.experiment_index(), dlg.GetValue())
+        dlg.Destroy()
+        self.__gate_mediator.history_changed()
+
+    def all_experiments(self):
+        return self.__quantum_computer.all_experiments()
+
+    def max_experiment_button_width(self):
+        all_experiments = self.__quantum_computer.all_experiments()
+        max_width = 0
+        for experiment in all_experiments:
+            dc = wx.ScreenDC()
+            label = self.get_restore_experiment_label(experiment.name(), experiment.date())
+            w,_ = dc.GetTextExtent(label)
+            max_width = max(max_width, w)
+        return max_width
+
+    def get_restore_experiment_label(self, experiment_name, experiment_date):
+        return "{} created at {}".format(experiment_name, experiment_date.strftime("%Y-%m-%d %H:%M"))
+
+
+class HistoryButton(wx.Button):
+
+    def __init__(self, parent, size, experiment_index, experiment_mediator):
+        wx.Button.__init__(self, parent, size=size)
+        self._experiment_mediator = experiment_mediator
+        self.__experiment_index = experiment_index
+        self._init_view()
         self.Bind(wx.EVT_BUTTON, self.__on_click)
 
+    def experiment_index(self):
+        return self.__experiment_index
+
+    def _init_view(self):
+        raise Exception("init view not implemented")
+
     def __on_click(self, event):
-        self.__quantum_computer.restore_experiment_at(self.__experiment_index)
-        self.__gate_mediator.experiment_changed()
+        self._history_operation()
+
+    def _history_operation(self):
+        raise Exception("history operation not implemented")
+
+
+class RestoreExperimentButton(HistoryButton):
+
+    def __init__(self, parent, label, experiment_index, experiment_mediator):
+        self.__label = label
+        max_size = experiment_mediator.max_experiment_button_width()
+        HistoryButton.__init__(self, parent, (max_size, 50), experiment_index, experiment_mediator)
+
+    def _init_view(self):
+        self.SetLabelText(self.__label)
+
+    def _history_operation(self):
+        self._experiment_mediator.on_restore(self)
+
+
+class DeleteExperimentButton(HistoryButton):
+    def __init__(self, parent, experiment_index, experiment_mediator):
+        HistoryButton.__init__(self, parent, (50, 50), experiment_index, experiment_mediator)
+
+    def _init_view(self):
+        makeSelfIconButton(self, (50, 50), "../images/circuit/delete.png")
+
+    def _history_operation(self):
+        self._experiment_mediator.on_delete(self)
+
+
+class RenameExperimentButton(HistoryButton):
+    def __init__(self, parent, experiment_index, experiment_mediator):
+        HistoryButton.__init__(self, parent, (50,50), experiment_index, experiment_mediator)
+
+    def _init_view(self):
+        makeSelfIconButton(self, (50, 50), "../images/circuit/rename.png")
+
+    def _history_operation(self):
+        self._experiment_mediator.on_rename(self)
 
 
 class HistoryPanel(ScrolledPanel):
 
     def __init__(self, parent, gate_mediator, quantum_computer):
         super().__init__(parent)
-        self.__quantum_computer = quantum_computer
-        self.__gate_mediator = gate_mediator
+        self.__experiment_mediator = ExperimentMediator(self, gate_mediator, quantum_computer)
         gate_mediator.set_history_panel(self)
         self.__root_sizer = wx.BoxSizer(wx.VERTICAL)
         self.__create_new_history_view()
@@ -73,9 +162,15 @@ class HistoryPanel(ScrolledPanel):
         self.__root_sizer.AddSpacer(20)
         self.__root_sizer.Add(new_big_font_label(self, "History of experiments"), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(20)
-        for experiment in self.__quantum_computer.all_experiments():
-            label = "restore experiment {} created at {}".format(experiment.index(), experiment.date())
-            self.__root_sizer.Add(RestoreExperimentButton(self, label, experiment.index(), self.__gate_mediator, self.__quantum_computer), 0, wx.CENTER)
+        for experiment in self.__experiment_mediator.all_experiments():
+            label = self.__experiment_mediator.get_restore_experiment_label(experiment.name(), experiment.date())
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer.Add(RestoreExperimentButton(self, label, experiment.index(), self.__experiment_mediator))
+            sizer.AddSpacer(10)
+            sizer.Add(RenameExperimentButton(self, experiment.index(), self.__experiment_mediator))
+            sizer.AddSpacer(10)
+            sizer.Add(DeleteExperimentButton(self, experiment.index(), self.__experiment_mediator))
+            self.__root_sizer.Add(sizer, 0, wx.CENTER)
         self.__root_sizer.Layout()
         self.SetupScrolling()
         self.Thaw()
