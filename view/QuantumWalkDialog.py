@@ -68,7 +68,7 @@ class QuantumWalkMediator:
 
 
 WIDTH = 750
-HEIGHT = 800
+HEIGHT = 650
 TOTAL_VERTICES_NUMBER_LABEL = "total vertices number = 2t + 1 = {}"
 
 

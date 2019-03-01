@@ -19,7 +19,7 @@ class BlochEvolutionPanel(wx.ScrolledWindow):
 
     def __init__(self, parent):
         wx.ScrolledWindow. __init__(self, parent, -1, style=wx.SUNKEN_BORDER | wx.TAB_TRAVERSAL)
-        self.figure = Figure(figsize=(3.,3.))
+        self.figure = Figure(figsize=(2.,2.))
         FigureCanvas(self, -1, self.figure)
         b = Bloch(self.figure)
         b.make_sphere()
@@ -44,7 +44,7 @@ class GraphPanel(wx.Panel):
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID, figsize=(4., 3.5))
+        fig = plt.figure(SCHODRINGER_EXPECTATIONS_FIGURE_ID, figsize=(4.1, 2.5))
         FigureCanvas(self, -1, fig)
         plt.gca()
         fig.axes[0].set_xlabel('Time')
@@ -357,4 +357,3 @@ class SchodringerExperimentPanel(ScrolledPanel):
         self.__going_up = going_up
         self.__should_show = should_show
         self.__timer.Start(15)
-
