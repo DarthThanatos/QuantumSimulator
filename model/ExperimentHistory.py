@@ -40,6 +40,8 @@ class ExperimentHistory:
         index = uuid.uuid4()
         circuit_experiment = CircuitExpriment(circuit, index)
         self.__circuit_experiments[index] = circuit_experiment
+        if self.__current_experment_index == -1:
+            self.__current_experment_index = index
         return index
 
     def restore_circuit_experiment(self, experiment_index):

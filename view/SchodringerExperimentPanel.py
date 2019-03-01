@@ -12,6 +12,7 @@ from view.SchodringerMediator import SchodringerMediator
 from view.constants import SCHODRINGER_EXPECTATIONS_FIGURE_ID, HAMILTONIAN_PANEL_ID, PSI_PANEL_ID
 import numpy as np
 from math import pi
+from wx.lib.scrolledpanel import ScrolledPanel
 
 
 class BlochEvolutionPanel(wx.ScrolledWindow):
@@ -151,7 +152,7 @@ class ProgressSizer(wx.BoxSizer):
         self.Layout()
 
 
-class SchodringerExperimentPanel(wx.Panel):
+class SchodringerExperimentPanel(ScrolledPanel):
 
     def __init__(self, splitter_parent, gate_mediator, quantum_computer):
         wx.Panel.__init__(self, splitter_parent)
@@ -163,6 +164,7 @@ class SchodringerExperimentPanel(wx.Panel):
         self.Bind(wx.EVT_TIMER, self.__animate_showing, self.__timer)
         self.__root_sizer = self.__new_root_sizer()
         self.SetSizer(self.__root_sizer)
+        self.SetupScrolling()
 
     def __new_schodringer_mediator(self, gate_mediator, quantum_computer):
         sm = SchodringerMediator(quantum_computer)
@@ -305,6 +307,7 @@ class SchodringerExperimentPanel(wx.Panel):
     def show_progress(self, should_show):
         self.__progress_sizer.show_children(should_show)
         self.__root_sizer.Layout()
+        self.SetupScrolling()
 
     def reset_view(self, should_show):
         self.__should_show = should_show

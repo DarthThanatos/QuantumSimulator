@@ -20,8 +20,11 @@ class BlochCanvas(wx.ScrolledWindow):
         self.__gate_mediator = gate_mediator
         gate_mediator.set_bloch_canvas(self)
         self.__quantum_computer = quantum_computer
-        self.figure = Figure()
-        FigureCanvas(self, -1, self.figure)
+        self.figure = Figure(figsize=(2.,2.))
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(FigureCanvas(self, -1, self.figure), wx.CENTER)
+        sizer.Layout()
+        self.SetSizer(sizer)
         b = Bloch(self.figure)
         b.make_sphere()
         self.__bloch = b
@@ -294,7 +297,7 @@ class ProbsPanel(ScrolledPanel):
 class CircuitInspector(wx.SplitterWindow):
 
     def __init__(self, parent, gate_mediator, quantum_computer):
-        wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(450, 1000))
+        wx.SplitterWindow.__init__(self, parent, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH, size=(350, 1000))
         self.__quantum_computer = quantum_computer
         self.__gate_mediator = gate_mediator
         gate_mediator.set_circuit_inspector(self)
@@ -304,7 +307,7 @@ class CircuitInspector(wx.SplitterWindow):
         self.__sash_pos = 800
         self.SetSashPosition(self.__sash_pos)
         self.__should_show_bloch = False
-        self.Bind(wx.EVT_SIZE, self.onresize)
+        #self.Bind(wx.EVT_SIZE, self.onresize)
         self.__timer = wx.Timer(self.__bloch_canvas)
         self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
         self.__bind(self)
@@ -348,7 +351,7 @@ class CircuitInspector(wx.SplitterWindow):
             else:
                 self.__timer.Stop()
         else:
-            if self.__sash_pos > 375:
+            if self.__sash_pos > 300:
                 self.__sash_pos -= 40
             else:
                 self.__timer.Stop()
