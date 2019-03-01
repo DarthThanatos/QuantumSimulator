@@ -233,17 +233,17 @@ class InspectorMatrixPanel(CenteredTextLatexPanel):
         self.__matrix = matrix
         self.__str_latex_matrix = str_latex_matrix
         self.__symbol = symbol
-        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (4., 1.), fontsize=13)
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (3., 1.), fontsize=17)
 
     def _prepare_text(self):
         matrix = self.__matrix
         slm = self.__str_latex_matrix
-        slm = slm + " = " if slm is not "" else ""
-        text = r'$' + self.__symbol + ' = ' + slm + ' \left[' \
+        slm = slm + " " if slm is not "" else ""
+        text = r'$ \stackrel{' + self.__symbol + r' = ' + slm + '}{' + self.__symbol + ' = \left[' \
                r' \stackrel{' + '{:.2f}'.format(matrix[0][0]) + '}{' + '{:.2f}'.format(matrix[0][1]) + r'}' \
                r'\,\,\,' \
                r' \stackrel{' + '{:.2f}'.format(matrix[1][0]) + '}{' + '{:.2f}'.format(matrix[1][1]) + r'}' \
-               r'\right]$'
+               r'\right]}$'
         return text
 
     def change_matrix_value(self, matrix):

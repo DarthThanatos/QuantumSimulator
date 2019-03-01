@@ -199,13 +199,13 @@ class ProbsPanelMediator:
 
     def show_partially(self):
         self.__probabilities_table.Hide()
-        self.__argand_panel.Hide()
+        # self.__argand_panel.Hide()
         self.__probs_panel.layout()
         self.__probs_panel.Show()
 
     def show_fully(self):
         self.__probabilities_table.Show()
-        self.__argand_panel.Show()
+        # self.__argand_panel.Show()
         self.__probs_panel.layout()
         self.__probs_panel.Show()
 

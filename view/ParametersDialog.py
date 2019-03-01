@@ -129,7 +129,7 @@ class ParameterView(wx.Panel):
 
 class ParametersPanel(wx.Panel):
 
-    WIDTH = 450
+    WIDTH = 350
 
     def __init__(self, parent, gate_name, gate_parameters_names, gate_parameters_defaults, parameters_mediator,
                  style=OK_CANCEL_STYLE):
@@ -177,7 +177,7 @@ class ParametersPanel(wx.Panel):
         self.__parameters_mediator.setup_apply_button(ok_btn)
         if self.__style == APPLY_STYLE:
             sizer = wx.BoxSizer(wx.HORIZONTAL)
-            sizer.Add(wx.Panel(self), proportion=3)
+            sizer.Add(wx.Panel(self), proportion=2)
             sizer.Add(ok_btn, proportion=1)
             sizer.AddSpacer(10)
             return sizer
@@ -282,6 +282,7 @@ class GateInspectorPanel(ScrolledPanel):
         self.__root_sizer.Add(self.__new_parameters_panel(gate), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(10)
         self.__root_sizer.Add(self.__new_matrix_panel(gate), 0, wx.CENTER)
+        self.__root_sizer.AddSpacer(10)
         self.__root_sizer.Add(self.__new_copy_gate_btn(), 0, wx.CENTER)
         self.__root_sizer.Layout()
         self.SetupScrolling()
@@ -305,8 +306,8 @@ class GateInspectorPanel(ScrolledPanel):
 
     def __new_close_button(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn = newIconButton(self, (32, 32), '../images/icons/close_icon.png', self.on_close)
-        sizer.Add(wx.Panel(self), 5)
+        btn = newIconButton(self, (10, 10), '../images/icons/close_icon.png', self.on_close)
+        sizer.Add(wx.Panel(self), 24)
         sizer.Add(btn, 1)
         return sizer
 
@@ -340,10 +341,10 @@ class GateInspectorPanel(ScrolledPanel):
                 self.__timer.Stop()
             self.__sash_pos = max(1, self.__sash_pos)
         else:
-            if self.__sash_pos < 450:
+            if self.__sash_pos < 350:
                 self.__sash_pos += 40
             else:
-                self.__sash_pos = 450
+                self.__sash_pos = 350
                 self.__timer.Stop()
         parent.SetSashPosition(self.__sash_pos, redraw=True)
         event.Skip()

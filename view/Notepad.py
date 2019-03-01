@@ -2,7 +2,7 @@ import traceback
 import wx.stc as stc
 import keyword
 import wx, os
-from util.Utils import newStandardButton, get_workspace_path
+from util.Utils import newStandardButton, get_workspace_path, get_screen_w_h
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from wx.aui import AuiNotebook
@@ -220,6 +220,8 @@ class MyTree(wx.TreeCtrl):
         file_to_open = "\\".join(parts)
         self.notebook.new_tab_if_not_exists(file_to_open, retain_content=False)
 
+SCREEN_WIDTH,  _ = get_screen_w_h()
+
 
 class Notepad(wx.SplitterWindow):
     def __init__(self, parent, gate_mediator, quantum_computer):
@@ -238,12 +240,12 @@ class Notepad(wx.SplitterWindow):
         self.workspacePath = get_workspace_path()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.__new_inspector_notebook_splitter(), self.newFileTree())
-        self.SetSashPosition(1500)
+        self.SetSashPosition(SCREEN_WIDTH * 5. / 4)
 
     def __new_inspector_notebook_splitter(self):
         inspector_notebook_splitter = wx.SplitterWindow(self, style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)
         inspector_notebook_splitter.SplitVertically(self.__new_console_panel(inspector_notebook_splitter), self.__new_notebook_panel(inspector_notebook_splitter))
-        inspector_notebook_splitter.SetSashPosition(450)
+        inspector_notebook_splitter.SetSashPosition(SCREEN_WIDTH / 4)
         inspector_notebook_splitter.SetMinimumPaneSize(1)
         return inspector_notebook_splitter
 
