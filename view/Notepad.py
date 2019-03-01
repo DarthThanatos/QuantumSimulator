@@ -240,7 +240,7 @@ class Notepad(wx.SplitterWindow):
         self.workspacePath = get_workspace_path()
         self.SetMinimumPaneSize(1)
         self.SplitVertically(self.__new_inspector_notebook_splitter(), self.newFileTree())
-        self.SetSashPosition(SCREEN_WIDTH * 5. / 4)
+        self.SetSashPosition(SCREEN_WIDTH * 3. / 4)
 
     def __new_inspector_notebook_splitter(self):
         inspector_notebook_splitter = wx.SplitterWindow(self, style=wx.CLIP_CHILDREN | wx.SP_LIVE_UPDATE)

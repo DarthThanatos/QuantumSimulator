@@ -29,7 +29,7 @@ def evolve(bloch_evolution_sphere, graph_panel, states, expectations, sentinel, 
             except Exception as e:
                 print(e)
             i += 1
-            time.sleep(5)
+            time.sleep(1.5)
 
 
 class SchodringerProgressBar(BaseProgressBar):
