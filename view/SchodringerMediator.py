@@ -49,6 +49,16 @@ class SchodringerProgressBar(BaseProgressBar):
               " Run time: %s." % self.time_elapsed() +
               " Est. time left: %s" % self.time_remaining_est(p))
 
+    def __getstate__(self):
+        """Return state values to be pickled."""
+        return (self.N, self.p_chunk_size, self.p_chunk, self.t_start)
+
+    def __setstate__(self, state):
+        """Restore state from the unpickled state values."""
+        self.N = state[0]
+        self.p_chunk_size = state[1]
+        self.p_chunk = state[2]
+        self.t_start = state[3]
 
 class SchodringerMediator:
 
@@ -68,12 +78,16 @@ class SchodringerMediator:
         self.__bloch_evolution = None
         self.__graph_panel = None
         self.__psi_panel = None
+        self.__up_button = None
         self.__gate_mediator = None
         self.__simulation_on = False
         self.__schodringer_experiment = None
         self.__evolution_thread = None
         self.__loading_thread = None
         self.__sentinel = {SHOULD_CONTINUE: True}
+
+    def set_up_button(self, btn):
+        self.__up_button = btn
 
     def set_progress_bar(self, progress_bar):
         self.__progress_bar = SchodringerProgressBar(progress_bar)
@@ -214,6 +228,13 @@ class SchodringerMediator:
                 self.__quantum_computer.get_current_schodringer_experiment()
             self.__visualize_hamiltonian()
             self.__psi_panel.change_psi_value(self.__schodringer_experiment.get_psi0())
+        else:
+            self.__up_button.set_direction(is_up=False)
 
     def circuit_grid_changed(self):
         self.__visualize_hamiltonian()
+
+    def adjust_panel_position(self):
+        is_up = self.__up_button.is_up()
+        self.__schodringer_panel.max_sash_pos = 230 if not is_up else 1
+        self.__schodringer_panel.reset_view(True, is_up)

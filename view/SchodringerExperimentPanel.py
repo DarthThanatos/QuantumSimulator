@@ -7,7 +7,7 @@ from qutip import Bloch
 import matplotlib.pyplot as plt
 from model.constants import MASTERS_EQUATIONS, MONTE_CARLO
 from util.Utils import new_big_font_label, newStandardButton, new_titled_view, ImgPanel, MatrixPanel, \
-    CenteredTextLatexPanel
+    CenteredTextLatexPanel, newIconButton, makeSelfIconButton
 from view.SchodringerMediator import SchodringerMediator
 from view.constants import SCHODRINGER_EXPECTATIONS_FIGURE_ID, HAMILTONIAN_PANEL_ID, PSI_PANEL_ID
 import numpy as np
@@ -152,12 +152,39 @@ class ProgressSizer(wx.BoxSizer):
         self.Layout()
 
 
+class UpDownButton(wx.Button):
+
+    def __init__(self, parent, schodringer_mediator):
+        wx.Button.__init__(self, parent, size=(32,32))
+        makeSelfIconButton(self, (32, 32), "../images/circuit/up.png")
+        self.__up = False
+        self.__schodringer_mediator = schodringer_mediator
+        self.Bind(wx.EVT_BUTTON, self.__on_click)
+
+    def __on_click(self, _):
+        self.__up = not self.__up
+        self.__update_bitmap()
+        self.__schodringer_mediator.adjust_panel_position()
+
+    def set_direction(self, is_up):
+        self.__up = is_up
+        self.__update_bitmap()
+
+    def __update_bitmap(self):
+        bmp_path = "../images/circuit/{}.png".format("up" if not self.__up else "down")
+        makeSelfIconButton(self, (32,32), bmp_path)
+
+    def is_up(self):
+        return self.__up
+
 class SchodringerExperimentPanel(ScrolledPanel):
 
     def __init__(self, splitter_parent, gate_mediator, quantum_computer):
-        wx.Panel.__init__(self, splitter_parent)
+        ScrolledPanel.__init__(self, splitter_parent)
         self.__should_show = False
         self.__sash_pos = 800
+        self.max_sash_pos = 230
+        self.__going_up = True
         self.__progress_sizer = None
         self.__schodringer_mediator = self.__new_schodringer_mediator(gate_mediator, quantum_computer)
         self.__timer = wx.Timer(self)
@@ -174,10 +201,19 @@ class SchodringerExperimentPanel(ScrolledPanel):
 
     def __new_root_sizer(self):
         root_sizer = wx.BoxSizer(wx.VERTICAL)
+        root_sizer.Add(self.__new_up_arrow(), 0, wx.EXPAND)
         root_sizer.Add(self.__new_schodringer_title_view(), 0, wx.EXPAND)
         root_sizer.AddSpacer(30)
         root_sizer.Add(self.__new_experiment_sizer(), 0, wx.CENTER)
         return root_sizer
+
+    def __new_up_arrow(self):
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = UpDownButton(self, self.__schodringer_mediator)
+        self.__schodringer_mediator.set_up_button(btn)
+        sizer.Add(wx.Panel(self), 10)
+        sizer.Add(btn, 1)
+        return sizer
 
     def __new_experiment_sizer(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -297,10 +333,18 @@ class SchodringerExperimentPanel(ScrolledPanel):
             else:
                 self.__timer.Stop()
         else:
-            if self.__sash_pos > 230:
-                self.__sash_pos -= 20
+            if self.__going_up:
+                if self.__sash_pos > self.max_sash_pos:
+                    self.__sash_pos -= 20
+                else:
+                    self.__sash_pos = self.max_sash_pos
+                    self.__timer.Stop()
             else:
-                self.__timer.Stop()
+                if self.__sash_pos < self.max_sash_pos:
+                    self.__sash_pos += 20
+                else:
+                    self.__sash_pos = self.max_sash_pos
+                    self.__timer.Stop()
         parent.SetSashPosition(self.__sash_pos)
         event.Skip()
 
@@ -309,7 +353,8 @@ class SchodringerExperimentPanel(ScrolledPanel):
         self.__root_sizer.Layout()
         self.SetupScrolling()
 
-    def reset_view(self, should_show):
+    def reset_view(self, should_show, going_up=True):
+        self.__going_up = going_up
         self.__should_show = should_show
         self.__timer.Start(15)
 

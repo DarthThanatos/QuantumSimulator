@@ -46,12 +46,14 @@ class StateDetailsFun:
     def __call__(self):
         self.__probabilities_mediator.visualise_amplitude(self.__amplitude)
 
+COLUMNS = 4
+
 
 class ProbabilitiesTable(wx.grid.Grid):
     def __init__(self, parent, register_representation, probabilities_mediator):
         wx.grid.Grid.__init__(self, parent)
         self.__probabilities_mediator = probabilities_mediator
-        self.CreateGrid(len(register_representation), 5)
+        self.CreateGrid(len(register_representation), COLUMNS)
         self.__renderer =  ButtonRenderer(StateDetailsFun(0, self.__probabilities_mediator))
         for i, row_representation in enumerate(register_representation):
             self.__update_row(row_representation, i)
@@ -62,17 +64,18 @@ class ProbabilitiesTable(wx.grid.Grid):
         self.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.__on_left_up)
 
     def __update_row(self, row_representation, i):
-        for j in range(5):
+        for j in range(COLUMNS):
             self.SetReadOnly(i, j, True)
             if j == 4:
-                self.SetCellRenderer(i, 4, ButtonRenderer(StateDetailsFun(complex(row_representation[3]), self.__probabilities_mediator)))
+                pass
+                # self.SetCellRenderer(i, 4, ButtonRenderer(StateDetailsFun(complex(row_representation[3]), self.__probabilities_mediator)))
             else:
                 self.SetCellAlignment(i, j, wx.ALIGN_CENTRE, wx.ALIGN_CENTRE)
                 self.SetCellValue(i, j, row_representation[j])
 
     def __setup_titles(self):
-        titles = ["value", "qubits", "probability", "amplitude", ""]
-        for i in range(5):
+        titles = ["val", "qubits", "prob", "ampl", ""]
+        for i in range(4):
             self.SetColLabelValue(i, titles[i])
 
     def __on_left_down(self, evt):

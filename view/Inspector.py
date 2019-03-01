@@ -227,6 +227,7 @@ class ProbsPanel(ScrolledPanel):
         self.__argand_background_drawn = False
         self.__init_root_sizer()
         self.SetSizer(self.__root_sizer)
+        self.SetBackgroundColour(wx.WHITE)
         self.SetupScrolling()
 
     def reset_view(self):
@@ -242,8 +243,8 @@ class ProbsPanel(ScrolledPanel):
         self.__root_sizer.AddSpacer(20)
         self.__root_sizer.Add(new_big_font_label(self, "State of the register"), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(20)
-        self.__root_sizer.Add(self.__new_probabilities_table(), 0, wx.EXPAND)
-        self.__root_sizer.Add(self.__qubit_state_argand(self), wx.CENTER, wx.EXPAND)
+        self.__root_sizer.Add(self.__new_probabilities_table(), 0, wx.CENTER)
+        # self.__root_sizer.Add(self.__qubit_state_argand(), wx.CENTER, wx.EXPAND)
         self.__root_sizer.Layout()
 
     def __new_probabilities_table(self):
@@ -252,12 +253,19 @@ class ProbsPanel(ScrolledPanel):
         self.__probabilities_mediator.set_probabilities_table(probabilities_table)
         return probabilities_table
 
-    def __qubit_state_argand(self, panel):
-        fig = plt.figure(ARGAND_FIGURE_ID, figsize=(2., 2.))
-        argand_panel = FigureCanvas(panel, -1, fig)
+    def __qubit_state_argand(self, ):
+        fig = plt.figure(ARGAND_FIGURE_ID, figsize=(2., 2.5))
+        argand_panel = self.__new_argand_sizer(fig)
         self.__palette()
         self.__probabilities_mediator.set_argand_panel(argand_panel)
         return argand_panel
+
+    def __new_argand_sizer(self, fig):
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(FigureCanvas(self, -1, fig), 3)
+        sizer.Add(wx.Panel(self), 1)
+        # sizer.Add(wx.Panel(self), wx.CENTER)
+        return sizer
 
     def visualize_complex(self, x):
         fig = plt.figure(ARGAND_FIGURE_ID)
@@ -274,6 +282,7 @@ class ProbsPanel(ScrolledPanel):
             RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
             for i, x in enumerate(xval):
                 plt.polar([0, x], [0, 1], marker=',', c=RGB_tuples[i])  # first are angles, second are rs
+            plt.gca().set_yticks([])
             self.__argand_background_drawn = True
         self.__remove_previous_argand_pointer()
 
@@ -293,6 +302,7 @@ class ProbsPanel(ScrolledPanel):
     def show_fully(self):
         self.__probabilities_mediator.show_fully()
 
+INSPECTOR_MAIN_SASH = 250
 
 class CircuitInspector(wx.SplitterWindow):
 
@@ -302,8 +312,8 @@ class CircuitInspector(wx.SplitterWindow):
         self.__gate_mediator = gate_mediator
         gate_mediator.set_circuit_inspector(self)
         self.__probs_panel = None
-        self.__bloch_canvas = BlochCanvas(self, gate_mediator, quantum_computer)
-        self.SplitHorizontally(self.__new_probs_history_splitter(), self.__bloch_canvas)
+        self.__bloch_canvas = None
+        self.SplitHorizontally(self.__new_probs_history_splitter(), self.__new_bloch_sizer())
         self.__sash_pos = 800
         self.SetSashPosition(self.__sash_pos)
         self.__should_show_bloch = False
@@ -312,11 +322,22 @@ class CircuitInspector(wx.SplitterWindow):
         self.__bloch_canvas.Bind(wx.EVT_TIMER, self.__show_bloch, self.__timer)
         self.__bind(self)
 
+    def __new_bloch_sizer(self):
+        panel = wx.Panel(self)
+        self.__bloch_canvas = BlochCanvas(panel, self.__gate_mediator, self.__quantum_computer)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.Panel(panel), wx.CENTER)
+        sizer.Add(self.__bloch_canvas, wx.CENTER)
+        sizer.Add(wx.Panel(panel), wx.CENTER)
+        panel.SetSizer(sizer)
+        sizer.Layout()
+        return panel
+
     def __new_probs_history_splitter(self):
         probs_history_splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
         history_panel = HistoryPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
         gateinsp_probs_splitter = self.__new_gateinsp_probs_splitter(probs_history_splitter)
-        probs_history_splitter.SplitHorizontally(gateinsp_probs_splitter, history_panel, 375)
+        probs_history_splitter.SplitHorizontally(gateinsp_probs_splitter, history_panel, INSPECTOR_MAIN_SASH)
         return probs_history_splitter
 
     def __new_gateinsp_probs_splitter(self, probs_history_splitter):
@@ -351,7 +372,7 @@ class CircuitInspector(wx.SplitterWindow):
             else:
                 self.__timer.Stop()
         else:
-            if self.__sash_pos > 300:
+            if self.__sash_pos > INSPECTOR_MAIN_SASH:
                 self.__sash_pos -= 40
             else:
                 self.__timer.Stop()

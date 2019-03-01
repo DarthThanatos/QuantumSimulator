@@ -26,7 +26,9 @@ class SchodringerExperiment:
         psi0 = ket(str(self.get_psi0()))
         times = np.linspace(0., 10., steps)
         if method == MONTE_CARLO:
-            return mc_solve(H, psi0, times, c_op, e_ops, progress_bar)
+            # return mc_solve(H, psi0, times, c_op, e_ops, progress_bar)
+            res = mcsolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=qutip.Options(store_states=True, average_states=True), progress_bar=progress_bar)
+            return (res.states, res.expect)
         elif method == MASTERS_EQUATIONS:
             res = mesolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=qutip.Options(store_states=True), progress_bar=progress_bar)
             return (res.states, res.expect)
