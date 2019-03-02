@@ -1,5 +1,5 @@
-from qutip import *
-from matplotlib.pyplot import  *
+from qutip import Qobj, ket, mcsolve, destroy, sigmax, sigmay,sigmaz, Options, serial_map, Bloch, hadamard_transform
+from matplotlib.pyplot import subplots
 from threading import Thread
 import time
 from math import cos, sin, radians
@@ -9,7 +9,7 @@ if __name__ == '__main__':
     H = 2 * np.pi  * sigmax()
     psi0 = ket("0")
     times = np.linspace(0., 10., 20)
-    res = mcsolve(H, psi0, times, [destroy(2)], [sigmaz(), sigmay()], map_func=serial_map, options=qutip.Options(store_states=True))
+    res = mcsolve(H, psi0, times, [destroy(2)], [sigmaz(), sigmay()], map_func=serial_map, options=Options(store_states=True))
     fig, ax = subplots()
     ax.plot(res.times, res.expect[0])
     ax.plot(res.times, res.expect[1])
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         return res
 
     def getEvolution(H, psi0, times):
-        res = mcsolve(H, psi0, times, [destroy(2)], [], options=qutip.Options(average_states=True))
+        res = mcsolve(H, psi0, times, [destroy(2)], [], options=Options(average_states=True))
         res = res.states
 
         # res = custom_mcsolve(H, psi0, times)
@@ -82,7 +82,7 @@ if __name__ == '__main__':
             time.sleep(.05)
 
     def rotationGate(coin_angle):
-        return qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
+        return Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
                             [sin(radians(coin_angle)), -cos(radians(coin_angle))]], dims=[[2],[2]])
 
     def standaloneBloch():

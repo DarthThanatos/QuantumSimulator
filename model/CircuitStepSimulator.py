@@ -10,7 +10,7 @@ from util.Utils import print_register_state
 
 class CircuitStepSimulator:
 
-    def __init__(self, quantum_computer):
+    def __init__(self, circuit):
         # single_gates: dict of dicts {j -> {i -> gate}}
         # multi_gates: dict of dicts {j -> {ctrl_i_tuple -> gate}}
         # please note that gates in single_gates and multi_gates should be disjoint
@@ -18,7 +18,7 @@ class CircuitStepSimulator:
         self.__measure_gates = None
         self.__multi_gates = None
         self.__step = -1
-        self.__quantum_computer = quantum_computer
+        self.__circuit = circuit
         self.__current_psi = None
 
     def step_already_simulated(self, step):
@@ -36,14 +36,16 @@ class CircuitStepSimulator:
     def simulation_step(self):
         return self.__step
 
-    def fast_forward(self, single_gates, measure_gates, multi_gates):
+    def fast_forward(self, single_gates, measure_gates, multi_gates, measure=False):
         self.__initialize(single_gates, measure_gates, multi_gates)
         next_j = self.__find_next_step()
         while next_j != self.__step:
             self.__step = next_j
             self.__on_current_step("fast forward")
             next_j = self.__find_next_step()
-        print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+        # print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+        if measure:
+            self.__measure_fully()
 
     def next_step(self, single_gates, measure_gates, multi_gates):
         self.__initialize(single_gates, measure_gates, multi_gates)
@@ -51,7 +53,7 @@ class CircuitStepSimulator:
         if next_j != self.__step:
             self.__step = next_j
             self.__on_current_step()
-        print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+        # print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
 
     def back_step(self, single_gates, measure_gates, multi_gates):
         self.__initialize(single_gates, measure_gates, multi_gates)
@@ -61,11 +63,11 @@ class CircuitStepSimulator:
         self.__on_current_step("back step")
         self.__step = self.__find_previous_step()
         if self.__step == -1:
-            self.__current_psi = self.__quantum_computer.initial_register_ket()
-        print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+            self.__current_psi = self.__circuit.initial_register_ket()
+        # print_register_state(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
 
     def __on_current_step(self, log="next step"):
-        print(log, self.__step)
+        # print(log, self.__step)
         self.__perform_single_gates_tensor()
         self.__measure()
         self.__process_multi_gates()
@@ -89,26 +91,26 @@ class CircuitStepSimulator:
     def __measure_fine_grainly(self):
         for i in self.__measure_gates[self.__step]:
             measure_gate = self.__measure_gates[self.__step][i]
-            self.__current_psi = measure_gate.transform(self.__current_psi, self.__quantum_computer.circuit_qubits_number())
+            self.__current_psi = measure_gate.transform(self.__current_psi, self.__circuit.circuit_qubits_number())
 
     def __should_measure_fully(self):
         current_measurements = self.__measure_gates[self.__step]
-        return len(current_measurements.keys()) == self.__quantum_computer.circuit_qubits_number()
+        return len(current_measurements.keys()) == self.__circuit.circuit_qubits_number()
 
     def __measure_fully(self):
-        full_measurement = FullMeasurement(self.__quantum_computer.circuit_qubits_number())
+        full_measurement = FullMeasurement(self.__circuit.circuit_qubits_number())
         self.__current_psi = full_measurement.transform(self.__current_psi)
 
     def __process_multi_gates(self):
         if not self.__multi_gates.__contains__(self.__step):
             return
         for ctrls, gate in self.__multi_gates[self.__step].items():
-            multi_transformation = MultiQubitTransformation(gate, ctrls, self.__quantum_computer.circuit_qubits_number())
+            multi_transformation = MultiQubitTransformation(gate, ctrls, self.__circuit.circuit_qubits_number())
             self.__current_psi = multi_transformation.transform(self.__current_psi)
 
     def __prepared_single_gates_dict_for_current_step(self):
         prepared_dict = dict(self.__single_gates[self.__step])
-        nqubits = self.__quantum_computer.circuit_qubits_number()
+        nqubits = self.__circuit.circuit_qubits_number()
         identities_indices = list(filter(lambda x: x not in self.__single_gates[self.__step].keys(), range(nqubits)))
         for index in identities_indices:
             prepared_dict[index] = Identity(index)
@@ -119,12 +121,12 @@ class CircuitStepSimulator:
         self.__measure_gates = measure_gates
         self.__multi_gates = multi_gates
         if self.__step == -1:
-            self.__current_psi = self.__quantum_computer.initial_register_ket()
+            self.__current_psi = self.__circuit.initial_register_ket()
 
     def fast_back(self):
         self.__step = -1
-        self.__current_psi = self.__quantum_computer.initial_register_ket()
-        print("fast back")
+        self.__current_psi = self.__circuit.initial_register_ket()
+        # print("fast back")
 
     def __find_next_step(self):
         gates_dicts = [self.__single_gates, self.__measure_gates, self.__multi_gates]
@@ -156,3 +158,12 @@ class CircuitStepSimulator:
             self.__measure_gates,
             self.__multi_gates
         )
+
+    def get_max_simulation_step(self):
+        single_gates = self.__circuit.simulation_single_gates_dict()
+        measure_gates = self.__circuit.simulation_measure_gates_dict()
+        multi_gates = self.__circuit.simulation_multi_gates_dict()
+        gates_dicts = [single_gates, measure_gates, multi_gates]
+        sorted_keys = map(lambda x: list(sorted(x.keys(), reverse=False)), gates_dicts)
+        max_keys = map(lambda x: x[-1] if len(x) > 0 else -1, sorted_keys)
+        return reduce(lambda a, x: max(a, x), max_keys, -1)

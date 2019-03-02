@@ -59,15 +59,13 @@ class GateDragger:
         self.dragging = False
         self.circuit.Refresh()
 
-
     def swapSlotsIfPossible(self, m_x, m_y):
         i,j = mouse_to_grid_coordinates(m_x, m_y)
-        if not self.quantumComputer.can_add_gate_at(i, j):
+        if not self.quantumComputer.can_add_gate_at(i, j) and not self.__beyond_area(m_x, m_y):
             self.draggedGateTile = None
             return
         removed_gate = self.quantumComputer.remove_gate(*self.draggedGateTile.ij)
-        if m_x >= self.circuit.getW() or m_x < 2 * GATE_SIZE or \
-             m_y >= self.circuit.getH(qbitAreaOnly=True) or m_y < 0:
+        if self.__beyond_area(m_x, m_y):
                 self.draggedGateTile = None
                 self.circuit.resetView()
                 self.__gate_mediator.circuit_grid_changed(removed_gate=True)
@@ -76,3 +74,7 @@ class GateDragger:
         self.__gate_mediator.circuit_grid_changed()
         self.draggedGateTile = None
         self.circuit.resetView()
+
+    def __beyond_area(self, m_x, m_y):
+        return m_x >= self.circuit.getW() or m_x < 2 * GATE_SIZE or \
+             m_y >= self.circuit.getH(qbitAreaOnly=True) or m_y < 0

@@ -11,12 +11,13 @@
 #               : z (1/2)     - plot with zeros/plot without zeros
 ############################################################################################
 
-from qutip import *
+import qutip
+from qutip import tensor,basis,  qeye,ket2dm, sigmaz
 import numpy as np
 import matplotlib.pyplot as plt
 from math import *
 import cmath as cm
-import seaborn as sns
+
 
 # Basis states
 ket0 = basis(2, 0).unit()  # |0>
@@ -78,7 +79,7 @@ def quantum_discord(t, rho):
     for theta in range(0, 180, 9):
         for phi in range(0, 360, 12):
             E = qubit_gen(theta, phi).eigenstates()  # Sample states from bloch sphere
-            Eval = E[0];
+            Eval = E[0]
             Ev = E[1]
             Evec0 = ket2dm(Ev[0])
             Evec1 = ket2dm(Ev[1])  # compute projectors from states

@@ -17,6 +17,9 @@ class QuantumComputer:
         self.__circuit.update_schodringer_experiments()
         self.__quantum_walk = QuantumWalk()
 
+    def get_max_simulation_step(self):
+        return self.__circuit.get_max_simulation_step()
+
     def remove_experiment(self, index):
         self.__experiment_history.remove_experiment(index)
 

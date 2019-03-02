@@ -5,7 +5,7 @@ from qutip.cy.spconvert import dense2D_to_fastcsr_cmode
 from qutip.cy.spmatfuncs import cy_ode_rhs, cy_expect_psi_csr, spmv_csr
 import numpy as np
 import scipy.sparse as sp
-from qutip import *
+from qutip import parfor, Qobj, serial_map, sigmax, sigmay, sigmaz, destroy, ket
 from qutip.fastsparse import csr2fast
 from scipy.integrate import ode
 from scipy.integrate._ode import zvode

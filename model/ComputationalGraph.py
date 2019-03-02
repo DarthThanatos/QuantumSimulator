@@ -1,6 +1,6 @@
 import numpy as np
-from qutip import *
-from math import *
+from qutip import basis, tensor, hadamard_transform, Qobj, qeye, sigmaz, sigmax, ket
+from math import log2, cos, sin, radians
 
 
 class Node:
@@ -86,7 +86,7 @@ def ctrlZGate():
     return Qobj([[1,0,0,0], [0,1,0,0],[0,0,1,0],[0,0,0,-1]], dims = [[2,2],[2,2]])
 
 def rotationGate(coin_angle):
-    return qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
+    return Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],  # one paramter SU(2) matrix
                         [sin(radians(coin_angle)), -cos(radians(coin_angle))]], dims=[[2],[2]])
 
 def denseCoding():

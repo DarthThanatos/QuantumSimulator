@@ -106,6 +106,7 @@ class GateMediator:
         file_name = self.__code_notebook.get_current_file_name()
         out = quantum_computer.run_code(code, file_name, for_simulation=True)
         self.__notepad.update_console(out)
+        self.__gate_inspector_panel.on_close()
         self.__history_panel.reset_view()
 
     def build_circuit_from_code(self, quantum_computer):
@@ -117,6 +118,7 @@ class GateMediator:
         self.__bloch_canvas.reset_view()
         self.__history_panel.reset_view()
         self.__editor.switch_to_circuit_view()
+        self.__gate_inspector_panel.on_close()
         self.__schodringer_mediator.experiment_changed()
 
     def history_changed(self):
@@ -128,6 +130,7 @@ class GateMediator:
         self.__circuit_inspector.reset_view()
         self.__bloch_canvas.reset_view()
         self.__history_panel.reset_view()
+        self.__gate_inspector_panel.on_close()
         self.__schodringer_mediator.experiment_changed()
 
     def experiment_changed(self):
@@ -135,6 +138,7 @@ class GateMediator:
         self.__circuit_view.resetView()
         self.__circuit_inspector.reset_view()
         self.__bloch_canvas.reset_view()
+        self.__gate_inspector_panel.on_close()
         self.__schodringer_mediator.experiment_changed()
 
     def generate_code(self, quantum_computer, file_name):

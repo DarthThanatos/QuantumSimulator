@@ -1,11 +1,13 @@
 import time
-from threading import Thread
+from threading import Thread, Condition
 
 import wx
 from qutip import sigmax, sigmay, sigmaz
 from qutip.ui import BaseProgressBar
 
 SHOULD_CONTINUE = 0
+
+condition = Condition()
 
 
 def evolve(bloch_evolution_sphere, graph_panel, states, expectations, sentinel, steps, for_x, for_y, for_z):
@@ -29,7 +31,8 @@ def evolve(bloch_evolution_sphere, graph_panel, states, expectations, sentinel, 
             except Exception as e:
                 print(e)
             i += 1
-            time.sleep(1.5)
+            with condition:
+                condition.wait(1.5)
 
 
 class SchodringerProgressBar(BaseProgressBar):
@@ -192,6 +195,8 @@ class SchodringerMediator:
         self.__bulk_enable(enabled=True)
         self.__simulation_button.SetLabel("Start Simulation")
         self.__sentinel[SHOULD_CONTINUE] = False
+        with condition:
+            condition.notify()
         self.__evolution_thread.join()
         self.__graph_panel.clean()
         self.__bloch_evolution.clean_bloch()
@@ -213,9 +218,6 @@ class SchodringerMediator:
         self.__reset_state()
 
     def __visualize_hamiltonian(self):
-        should_show = self.__quantum_computer.circuit_qubits_number() == 1
-        if not should_show:
-            return
         coefficient = self.__coefficient_input.get_coefficient()
         h = self.__schodringer_experiment.get_hamiltonian(coefficient)
         self.__matrix_panel.change_matrix_value(h.full())
@@ -229,9 +231,13 @@ class SchodringerMediator:
             self.__visualize_hamiltonian()
             self.__psi_panel.change_psi_value(self.__schodringer_experiment.get_psi0())
         else:
+            self.__schodringer_panel.max_sash_pos = 230
             self.__up_button.set_direction(is_up=False)
 
     def circuit_grid_changed(self):
+        should_show = self.__quantum_computer.circuit_qubits_number() == 1
+        if not should_show:
+            return
         self.__visualize_hamiltonian()
 
     def adjust_panel_position(self):

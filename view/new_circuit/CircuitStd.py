@@ -20,11 +20,11 @@ from view.new_circuit.simulation_panel.SimulationPanel import FastBackActionPane
 class CircuitPanel(wx.Panel):
 
     def __init__(self, parent, quantum_computer, gate_mediator):
+        self.__quantum_computer = quantum_computer
         size = (self.getW(), self.getH())
         wx.Panel.__init__(self, parent, size=size)
         self.__gate_mediator = gate_mediator
         gate_mediator.set_circuit_view(self)
-        self.__quantum_computer = quantum_computer
         self.shouldStimulate = False
         self.filled_slots = {} # (i,j) => gateTile
         self.flattened_multigates = {}  # {(ctrl1, j1) -> (name_1, target_i_1), (ctrl2, j2) -> (name_2, target_i_2)...}
@@ -93,19 +93,6 @@ class CircuitPanel(wx.Panel):
             return self.filled_slots[(i,j)]
         return None
 
-    def resetView(self):
-        self.Freeze()
-        self.DestroyChildren()
-        self.rootSizer.Clear()
-        self.rootSizer.Add(self.new_QbitsReg())
-        self.rootSizer.Layout()
-        self.__enable_qubits_register_view()
-        self.multiqbitPlacer.cancel_drawing_control_line()
-        self.filled_slots = self.gridToGateTiles()
-        self.flattened_multigates = self.__quantum_computer.flattened_multi_gates()
-        self.Refresh()
-        self.Thaw()
-
     def gridToGateTiles(self):
         flattened_grid = self.__quantum_computer.flattened_grid()
         return {(i,j): SingleGateTile(i, j, flattened_grid[(i,j)]) for (i,j) in flattened_grid}
@@ -154,23 +141,12 @@ class CircuitPanel(wx.Panel):
         self.__gate_mediator.register_changed()
 
     def getW(self):
-        return (MAX_COLUMNS + GRID_OFFSET) * GATE_SIZE + MAX_COLUMNS * GATE_H_SPACE
+        current_max = max(self.__quantum_computer.get_max_simulation_step() + 1, MAX_COLUMNS)
+        return (current_max + GRID_OFFSET) * GATE_SIZE + current_max * GATE_H_SPACE
 
     def getH(self, qbitAreaOnly = False):
-        return MAX_ROWS * GATE_SIZE if not qbitAreaOnly else self.__quantum_computer.circuit_qubits_number() * GATE_SIZE
-
-    def on_paint(self, ev):
-        dc = wx.AutoBufferedPaintDC(self)
-        dc.Clear()
-        self.drawCords(dc)
-        self.drawStimula(dc)
-        self.multiqbitPlacer.draw_control_line(dc)
-        self.multiqbitPlacer.draw_multiqubit_gates(dc, self.flattened_multigates)
-        self.drawGates(dc)
-        if self.gateDragger.dragging:
-            self.drawDeleteMsg(dc)
-        del dc  # so that it is deallocated and we can create a new configuration below
-        self.drawSimulationMark()
+        current_max = max(self.__quantum_computer.circuit_qubits_number(), MAX_ROWS) + 1  # the trailing one is for the add button
+        return current_max * GATE_SIZE if not qbitAreaOnly else self.__quantum_computer.circuit_qubits_number() * GATE_SIZE
 
     def ij_to_slot_center_xy(self, i, j):
         x = (GATE_SIZE + GATE_H_SPACE) * j + GATE_SIZE/2 + GRID_OFFSET * GATE_SIZE
@@ -229,6 +205,36 @@ class CircuitPanel(wx.Panel):
         for view in self.__qbit_register_views:
             view.Enable(enable)
 
+    def on_paint(self, ev):
+        dc = wx.AutoBufferedPaintDC(self)
+        dc.Clear()
+        self.drawCords(dc)
+        self.drawStimula(dc)
+        self.multiqbitPlacer.draw_control_line(dc)
+        self.multiqbitPlacer.draw_multiqubit_gates(dc, self.flattened_multigates)
+        self.drawGates(dc)
+        if self.gateDragger.dragging:
+            self.drawDeleteMsg(dc)
+        del dc  # so that it is deallocated and we can create a new configuration below
+        self.drawSimulationMark()
+
+    def resetView(self):
+        self.Freeze()
+        self.GetParent().Refresh()
+        self.DestroyChildren()
+        self.rootSizer.Clear()
+        self.rootSizer.Add(self.new_QbitsReg())
+        self.rootSizer.Layout()
+        self.__enable_qubits_register_view()
+        self.multiqbitPlacer.cancel_drawing_control_line()
+        self.filled_slots = self.gridToGateTiles()
+        self.flattened_multigates = self.__quantum_computer.flattened_multi_gates()
+        self.Refresh()
+        self.SetInitialSize((self.getW(), self.getH()))
+        self.Fit()
+        self.GetParent().SetupScrolling(scrollToTop=False)
+        self.Thaw()
+
 
 class CircuitStd(wx.Panel):
 
@@ -249,16 +255,25 @@ class CircuitStd(wx.Panel):
         rootSizer.Add(self.newSimulationActionPanels(), 0, wx.CENTER)
         rootSizer.AddSpacer(30)
         rootSizer.Add(self.newCircuitScroll())
+        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        self.Bind(wx.EVT_PAINT, self.__on_paint)
         self.SetSizer(rootSizer)
         self.__pass_circuit()
 
+    def __on_paint(self, ev):
+        dc = wx.AutoBufferedPaintDC(self)
+        dc.SetBrush(wx.Brush(wx.WHITE))
+        dc.SetPen(wx.Pen(wx.WHITE))
+        dc.DrawRectangle(0,0,2000, 1500)
+
     def newCircuitScroll(self):
-        circuitScroll = ScrolledPanel(self, size=(1500, 700))
+        circuitScroll = ScrolledPanel(self, size=(2000, 1500))
         vbox = wx.BoxSizer(wx.VERTICAL)
         self.__circuit_panel = CircuitPanel(circuitScroll, self.__quantum_computer, self.__gate_mediator)
         vbox.Add(self.__circuit_panel)
         circuitScroll.SetSizer(vbox)
         circuitScroll.SetupScrolling()
+        circuitScroll.SetBackgroundColour(wx.WHITE)
         return circuitScroll
 
     def newSimulationActionPanels(self):
@@ -303,6 +318,7 @@ class CircuitStd(wx.Panel):
     def circuit_view(self):
         return self.__circuit_panel
 
+
 class CircuitSplitter(wx.SplitterWindow):
     def __init__(self, parent, gate_mediator, quantum_computer):
         wx.SplitterWindow.__init__(self, parent)
@@ -326,6 +342,7 @@ class CircuitSplitter(wx.SplitterWindow):
 
     def circuit_view(self):
         return self.__circuit.circuit_view()
+
 
 class CircuitStd_(wx.Panel):
 

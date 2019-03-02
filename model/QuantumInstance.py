@@ -9,28 +9,25 @@ from model.gates.RotationX import RotationXGate
 from model.gates.RotationY import RotationYGate
 from model.gates.RotationZ import RotationZGate
 from model.gates.U import UGate
-from util.Utils import eprint, is_iterable
+from util.Utils import eprint, is_iterable, print_register_state
 
 
 class QuantumInstance:
 
     def __init__(self, should_simulate, circuit):
         self.__circuit = circuit
-        self.__nqubits = 0
-        self.__register_value = 0
         self.__should_simulate = should_simulate
 
     def init_register(self, nqubits, value):
-        self.__nqubits = nqubits
-        self.__register_value = value
         self.__circuit.init_register(nqubits, value)
 
     def set_to(self, value):
         if not type(value) is int:
             eprint("argument of set_to must be an integer")
             return
-        if value > (2 ** self.__nqubits) - 1:
-            eprint("setting register to value", value, "would cause an overflow with number of qubits = ", self.__nqubits)
+        nqubits = self.__circuit.circuit_qubits_number()
+        if value > (2 ** nqubits) - 1:
+            eprint("setting register to value", value, "would cause an overflow with number of qubits = ", nqubits)
             return
         self.__circuit.set_to(value)
 
@@ -195,5 +192,18 @@ class QuantumInstance:
     def fast_back(self):
         self.__circuit.fast_back()
 
-    def __str__(self):
-        return "quantum instance with nqubits: {}, and register value: {}".format(self.__nqubits, self.__register_value)
+    def are_steps_free_at_qubit(self, from_q, to_q, qubit):
+        for j in range(from_q, to_q):
+            if not self.__circuit.can_add_gate_at(qubit, j):
+                return False
+        return True
+
+    def get_measured(self):
+        self.__circuit.fast_forward(measure=True)
+        measured = self.__circuit.current_simulation_psi()
+        return measured.data.tocoo().row[0]
+
+    def print_current_psi(self):
+        nqubits = self.__circuit.circuit_qubits_number()
+        current_psi = self.__circuit.current_simulation_psi()
+        print_register_state(current_psi, nqubits)

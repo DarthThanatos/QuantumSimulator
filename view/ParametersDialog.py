@@ -1,9 +1,9 @@
 from model.gates.U import UGate
 from util.Utils import get_screen_middle_point, flatten_dicts, newIconButton, InspectorMatrixPanel, newStandardButton, \
-    ImgPanel
+    ImgPanel, MatrixPanel
 import wx
 
-from view.constants import INSPECTOR_MATRIX_FIGURE_ID
+from view.constants import INSPECTOR_MATRIX_FIGURE_ID, INSPECTOR_SYMBOLIC_MATRIX_FIGURE_ID
 from wx.lib.scrolledpanel import ScrolledPanel
 
 
@@ -51,6 +51,9 @@ class ParameterMediator:
             parameter_view.change_error_log(wx.BLACK, wx.WHITE, error="")
         self.__on_parameter_input_changed()
 
+    def parameter_about_to_change(self):
+        self.__apply_button.Enable(False)
+
     def __on_parameter_input_changed(self):
         kwargs = self.__get_gate_kwargs()
         self.__apply_button.Enable(self._gate.is_gate_correct(kwargs))
@@ -71,7 +74,6 @@ class GateInspectorMediator(ParameterMediator):
         ParameterMediator.__init__(self, gate)
         self.__gate_mediator = gate_mediator
         self.__matrix_panel = None
-
 
     def set_matrix_panel(self, matrix_panel):
         self.__matrix_panel = matrix_panel
@@ -109,7 +111,12 @@ class ParameterView(wx.Panel):
         self.parameter_input = wx.TextCtrl(self, style=wx.TE_RICH | wx.WANTS_CHARS)
         self.parameter_input.SetValue(default)
         self.parameter_input.Bind(wx.EVT_KILL_FOCUS, self.__on_input_changed)
+        self.parameter_input.Bind(wx.EVT_SET_FOCUS, self.__on_focus)
         return self.parameter_input
+
+    def __on_focus(self, ev):
+        self.__parameter_mediator.parameter_about_to_change()
+        ev.Skip()
 
     def __on_input_changed(self, ev):
         self.__parameter_mediator.parameter_input_changed(self)
@@ -281,6 +288,7 @@ class GateInspectorPanel(ScrolledPanel):
         self.__root_sizer.AddSpacer(0 if len(gate.get_parameters_names()) != 0 else 40)
         self.__root_sizer.Add(self.__new_parameters_panel(gate), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(10)
+        self.__root_sizer.Add(self.__new_symbolic_gate_matrix_panel(gate))
         self.__root_sizer.Add(self.__new_matrix_panel(gate), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(10)
         self.__root_sizer.Add(self.__new_copy_gate_btn(), 0, wx.CENTER)
@@ -294,12 +302,21 @@ class GateInspectorPanel(ScrolledPanel):
     def __on_copy(self, _):
         self.__gate_mediator.gateSelected(self.__gate.get_name(), self.__gate)
 
+    def __new_symbolic_gate_matrix_panel(self, gate):
+        if gate.latex_matrix_str() == "":
+            return wx.Panel(self)
+        try:
+            gate.qutip_object().full()
+        except:
+            return wx.Panel(self)
+        return InspectorMatrixPanel(self, gate.latex_symbol(), INSPECTOR_SYMBOLIC_MATRIX_FIGURE_ID, gate.latex_matrix_str())
+
     def __new_matrix_panel(self, gate):
         try:
             gate_matrix = gate.qutip_object().full()
         except:
             return wx.Panel(self)
-        matrix_panel = InspectorMatrixPanel(self, gate.latex_symbol(), gate_matrix, INSPECTOR_MATRIX_FIGURE_ID, gate.latex_matrix_str())
+        matrix_panel = MatrixPanel(self, gate_matrix, INSPECTOR_MATRIX_FIGURE_ID, gate.latex_symbol(), figsize=(3.,1.), fontsize=17)
         if self.__gate_inspector_mediator is not None:
             self.__gate_inspector_mediator.set_matrix_panel(matrix_panel)
         return matrix_panel

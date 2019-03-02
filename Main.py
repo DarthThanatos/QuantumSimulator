@@ -1,3 +1,5 @@
+import sys
+sys.setrecursionlimit(5000)
 import wx
 
 from model.QuantumComputer import QuantumComputer
@@ -9,16 +11,8 @@ import re
 
 from win32api import GetSystemMetrics
 import os
+import multiprocessing
 
-# When working in intellij, we already are in the "view" directory.
-# If one wishes to run this code from a console, the root dir is "Simulator", thus all relative images paths break.
-# The code below adjusts the working directory, so there is no need to change images paths throughout the project
-# in case we want to execute the code from a different booting tool(whether from ide or console).
-
-cwd = os.getcwd()
-path_parts = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
-if path_parts[3] != "view":
-    os.chdir("view")
 
 class SimulatorApp(wx.App):
 
@@ -76,6 +70,18 @@ class SimulatorApp(wx.App):
         self.frame.Destroy()
 
 def main():
+    multiprocessing.freeze_support()
+
+    # When working in intellij, we already are in the "view" directory.
+    # If one wishes to run this code from a console, the root dir is "Simulator", thus all relative images paths break.
+    # The code below adjusts the working directory, so there is no need to change images paths throughout the project
+    # in case we want to execute the code from a different booting tool(whether from ide or console).
+
+    cwd = os.getcwd()
+    path_parts = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+    if path_parts[3] != "view":
+        os.chdir("view")
+
     app = SimulatorApp()
     app.MainLoop()
 

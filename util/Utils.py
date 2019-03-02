@@ -210,13 +210,14 @@ class CenteredTextLatexPanel(wx.Panel):
 
 
 class MatrixPanel(CenteredTextLatexPanel):
-    def __init__(self, parent, matrix, fig_numer):
+    def __init__(self, parent, matrix, fig_numer, symbol="H", figsize=(5., .75), fontsize=23):
         self.__matrix = matrix
-        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (5., .75))
+        self.__symbol = symbol
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, figsize, fontsize)
 
     def _prepare_text(self):
         matrix = self.__matrix
-        text = r'$H = \left[' \
+        text = r'$' + self.__symbol + ' = \left[' \
                r' \stackrel{' + '{:.2f}'.format(matrix[0][0]) + '}{' + '{:.2f}'.format(matrix[0][1]) + r'}' \
                r'\,\,\,' \
                r' \stackrel{' + '{:.2f}'.format(matrix[1][0]) + '}{' + '{:.2f}'.format(matrix[1][1]) + r'}' \
@@ -229,23 +230,12 @@ class MatrixPanel(CenteredTextLatexPanel):
 
 
 class InspectorMatrixPanel(CenteredTextLatexPanel):
-    def __init__(self, parent, symbol, matrix, fig_numer, str_latex_matrix=""):
-        self.__matrix = matrix
+    def __init__(self, parent, symbol, fig_numer, str_latex_matrix="", fig_size=(3., 1.)):
         self.__str_latex_matrix = str_latex_matrix
         self.__symbol = symbol
-        CenteredTextLatexPanel.__init__(self, parent, fig_numer, (3., 1.), fontsize=17)
+        CenteredTextLatexPanel.__init__(self, parent, fig_numer, fig_size, fontsize=17)
 
     def _prepare_text(self):
-        matrix = self.__matrix
-        slm = self.__str_latex_matrix
-        slm = slm + " " if slm is not "" else ""
-        text = r'$ \stackrel{' + self.__symbol + r' = ' + slm + '}{' + self.__symbol + ' = \left[' \
-               r' \stackrel{' + '{:.2f}'.format(matrix[0][0]) + '}{' + '{:.2f}'.format(matrix[0][1]) + r'}' \
-               r'\,\,\,' \
-               r' \stackrel{' + '{:.2f}'.format(matrix[1][0]) + '}{' + '{:.2f}'.format(matrix[1][1]) + r'}' \
-               r'\right]}$'
+        text = r'$' + self.__symbol + r' = ' + self.__str_latex_matrix + '$'
         return text
 
-    def change_matrix_value(self, matrix):
-        self.__matrix = matrix
-        self._redraw()

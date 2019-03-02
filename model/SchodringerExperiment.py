@@ -1,4 +1,4 @@
-from qutip import *
+from qutip import basis, Qobj, tensor, qeye, ket2dm, ket, identity, destroy, mcsolve, mesolve, sigmax, sigmay, sigmaz, Options
 from model.constants import MONTE_CARLO, MASTERS_EQUATIONS
 from model.CustomMCSolver import mc_solve
 import numpy as np
@@ -27,10 +27,11 @@ class SchodringerExperiment:
         times = np.linspace(0., 10., steps)
         if method == MONTE_CARLO:
             # return mc_solve(H, psi0, times, c_op, e_ops, progress_bar)
-            res = mcsolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=qutip.Options(store_states=True, average_states=True), progress_bar=progress_bar)
+            res = mcsolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=Options(store_states=True, average_states=True), progress_bar=progress_bar)
             return (res.states, res.expect)
         elif method == MASTERS_EQUATIONS:
-            res = mesolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=qutip.Options(store_states=True), progress_bar=progress_bar)
+            options = Options(store_states=True)
+            res = mesolve(H, psi0, times, [c_op] if c_op is not None else [], e_ops, options=options, progress_bar=progress_bar)
             return (res.states, res.expect)
 
     def solve(self, method=MONTE_CARLO, tunneling_coef=1, steps=20, for_x=True, for_y=True,

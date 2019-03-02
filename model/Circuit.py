@@ -91,6 +91,10 @@ class Circuit:
         return self.__register.nqubits
 
     def can_add_gate_at(self, i, j):
+        if j < 0:
+            return False
+        if self.__register.nqubits <= i or i < 0:
+            return False
         if self.__overlaps_single_gate(i, j):
             return False
         if self.__overlaps_multi_gate(i, j):
@@ -215,7 +219,9 @@ class Circuit:
         return flatten_dicts(list_of_dicts)
 
     def can_put_target(self, i_ctrl, j_ctrl, i_target, j_target):
-        if j_target != j_ctrl:
+        if j_target != j_ctrl or i_ctrl == i_target or j_ctrl < 0:
+            return False
+        if self.__register.nqubits <= i_ctrl or i_ctrl < 0:
             return False
         if not self.__target_exists_at(i_target, j_target):
             return False
@@ -317,8 +323,8 @@ class Circuit:
     def next_step(self):
         self.__with_initialization(self.__step_simulator.next_step)
 
-    def fast_forward(self):
-        self.__with_initialization(self.__step_simulator.fast_forward)
+    def fast_forward(self, measure=False):
+        self.__with_initialization(self.__step_simulator.fast_forward, measure)
 
     def back_step(self):
         self.__with_initialization(self.__step_simulator.back_step)
@@ -326,11 +332,14 @@ class Circuit:
     def fast_back(self):
         self.__step_simulator.fast_back()
 
-    def __with_initialization(self, simulator_fun):
+    def __with_initialization(self, simulator_fun, measure=False):
         single_gates = self.simulation_single_gates_dict()
         measure_gates = self.simulation_measure_gates_dict()
         multi_gates = self.simulation_multi_gates_dict()
-        simulator_fun(single_gates, measure_gates, multi_gates)
+        if measure:
+            simulator_fun(single_gates, measure_gates, multi_gates, measure)
+        else:
+            simulator_fun(single_gates, measure_gates, multi_gates)
 
     def simulation_step(self):
         return self.__step_simulator.simulation_step()
@@ -339,4 +348,7 @@ class Circuit:
         grid_i = self.__grid.get(i, None)
         if grid_i is not None:
             return grid_i.get(j, None)
+
+    def get_max_simulation_step(self):
+        return self.__step_simulator.get_max_simulation_step()
 

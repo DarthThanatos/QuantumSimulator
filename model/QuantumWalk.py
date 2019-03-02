@@ -1,4 +1,4 @@
-from qutip import *
+from qutip import basis, Qobj, tensor, qeye, ket2dm, ket
 import numpy as np
 from math import *
 
@@ -20,14 +20,14 @@ class QuantumWalk:
         return prob
 
     def __coin(self, coin_angle):
-        C_hat = qutip.Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],
+        C_hat = Qobj([[cos(radians(coin_angle)), sin(radians(coin_angle))],
                             [sin(radians(coin_angle)), -cos(radians(coin_angle))]])
         return C_hat
 
     def __shift(self, t):
         sites = 2 * t + 1
-        shift_l = qutip.Qobj(np.roll(np.eye(sites), 1, axis=0))
-        shift_r = qutip.Qobj(np.roll(np.eye(sites), -1, axis=0))
+        shift_l = Qobj(np.roll(np.eye(sites), 1, axis=0))
+        shift_r = Qobj(np.roll(np.eye(sites), -1, axis=0))
         S_hat = tensor(ket0 * ket0.dag(), shift_l) + tensor(ket1 * ket1.dag(), shift_r)
         return S_hat
 

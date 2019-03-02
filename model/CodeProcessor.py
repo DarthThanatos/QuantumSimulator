@@ -39,7 +39,7 @@ class CodeProcessor:
         return out, circuit
 
     def generate_current_circuit_code(self, circuit, file_name):
-        generated = "help(quantum_instance)\n"
+        generated = "import pydoc\n\npydoc.help(quantum_instance)\n"
         generated += self.__generate_init_code(circuit)
         generated += self.__generate_non_measure_code(circuit)
         generated += self.__generate_multi_gates_code(circuit)
