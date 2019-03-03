@@ -104,22 +104,28 @@ class GateMediator:
         # called when "run in console" button was clicked
         code = self.__code_notebook.get_current_code_string()
         file_name = self.__code_notebook.get_current_file_name()
-        out = quantum_computer.run_code(code, file_name, for_simulation=True)
-        self.__notepad.update_console(out)
-        self.__gate_inspector_panel.on_close()
-        self.__history_panel.reset_view()
+        try:
+            out = quantum_computer.run_code(code, file_name, for_simulation=True)
+            self.__notepad.update_console(out)
+            self.__gate_inspector_panel.on_close()
+            self.__history_panel.reset_view()
+        except Exception as e:
+            wx.MessageBox(str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)
 
     def build_circuit_from_code(self, quantum_computer):
         code = self.__code_notebook.get_current_code_string()
         file_name = self.__code_notebook.get_current_file_name()
-        quantum_computer.run_code(code, file_name, for_simulation=False)
-        self.__circuit_view.resetView()
-        self.__circuit_inspector.reset_view()
-        self.__bloch_canvas.reset_view()
-        self.__history_panel.reset_view()
-        self.__editor.switch_to_circuit_view()
-        self.__gate_inspector_panel.on_close()
-        self.__schodringer_mediator.experiment_changed()
+        try:
+            quantum_computer.run_code(code, file_name, for_simulation=False)
+            self.__circuit_view.resetView()
+            self.__circuit_inspector.reset_view()
+            self.__bloch_canvas.reset_view()
+            self.__history_panel.reset_view()
+            self.__editor.switch_to_circuit_view()
+            self.__gate_inspector_panel.on_close()
+            self.__schodringer_mediator.experiment_changed()
+        except Exception as e:
+            wx.MessageBox(str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)
 
     def history_changed(self):
         # called on rename experiment

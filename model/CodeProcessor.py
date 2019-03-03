@@ -1,6 +1,8 @@
 import sys
 from io import StringIO
 
+import re
+
 from model.Circuit import Circuit
 from model.QuantumInstance import QuantumInstance
 from model.constants import QUANTUM_INSTANCE
@@ -11,6 +13,34 @@ class CodeProcessor:
 
     def __init__(self, quantum_computer):
         self.__quantum_computer = quantum_computer
+        self.__initial_globals = globals()
+
+    def __create_local_scope_code(self, original_code):
+        lines = original_code.split("\n")
+        res = "def __temp_scope():\n"
+        for line in lines:
+            res += '\t' + line + "\n"
+        return res + "__temp_scope()\n" \
+                     "del globals()[\'__temp_scope\']"
+
+    def __remove_workspace_imports_re(self, code):
+        one = re.findall(r'import ((\w+\.?)+)', code)
+        two = re.findall(r'from ((\w+\.?)+) import \w', code)
+        for imp, _ in one + two:
+            try:
+                if imp.startswith("workspace"):
+                    del sys.modules[imp]
+            except Exception:
+                pass
+
+    def __remove_workspace_imports(self, old_sys_modules):
+        values = [k for k in set(sys.modules) - set(old_sys_modules)]
+        for imp in values:
+            try:
+                if imp.startswith("workspace"):
+                    del sys.modules[imp]
+            except Exception:
+                pass
 
     def run_code(self, code_string, file_name, for_simulation):
         # create file-like string to capture output
@@ -21,14 +51,22 @@ class CodeProcessor:
         safe_list = ['quantum_instance']
         current_locals = locals() # must be here, not in generator function, as locals are different there
         safe_dict = dict([(k, current_locals.get(k, None)) for k in safe_list])
+        safe_dict['__name__'] = '__main__'
+        code_string = self.__create_local_scope_code(code_string)
         # capture output and errors
         sys.stdout = codeOut
         sys.stderr = codeErr
+        old_sys_modules = dict(sys.modules)
         try:
             code_object = compile(code_string, file_name, 'exec')
             exec(code_object, safe_dict)
+            self.__remove_workspace_imports(old_sys_modules)
         except Exception as e:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            self.__remove_workspace_imports(old_sys_modules)
             traceback.print_exc()  # error message is printed to stdout, which at this moment is captured by codeOut
+            raise
         # restore stdout and stderr
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__

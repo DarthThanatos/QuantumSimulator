@@ -62,6 +62,11 @@ class ProbabilitiesTable(wx.grid.Grid):
         self.SetGridLineColour(wx.WHITE)
         self.GetGridWindow().Bind(wx.EVT_LEFT_DOWN, self.__on_left_down)
         self.GetGridWindow().Bind(wx.EVT_LEFT_UP, self.__on_left_up)
+        self.Bind(wx.grid.EVT_GRID_ROW_SIZE, self.__on_resize)
+        self.Bind(wx.grid.EVT_GRID_COL_SIZE, self.__on_resize)
+
+    def __on_resize(self, _):
+        self.__probabilities_mediator.probs_table_resized()
 
     def __update_row(self, row_representation, i):
         for j in range(COLUMNS):

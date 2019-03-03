@@ -279,8 +279,8 @@ class GateInspectorPanel(ScrolledPanel):
         self.SetBackgroundColour(wx.WHITE)
         self.SetupScrolling()
 
-    def reset_view(self, gate):
-        self.__gate = gate
+    def reset_view(self):
+        gate = self.__gate
         self.Freeze()
         self.DestroyChildren()
         self.__root_sizer.Clear()
@@ -362,12 +362,13 @@ class GateInspectorPanel(ScrolledPanel):
                 self.__sash_pos += 40
             else:
                 self.__sash_pos = 350
+                self.reset_view()
                 self.__timer.Stop()
         parent.SetSashPosition(self.__sash_pos, redraw=True)
         event.Skip()
 
     def inspect(self, gate):
-        self.reset_view(gate)
+        self.__gate = gate
         self.__show_inspector(True)
 
     def __show_inspector(self, should_show):

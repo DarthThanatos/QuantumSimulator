@@ -2,6 +2,7 @@ import traceback
 
 from model.constants import *
 from model.gates.CPhase import CPhaseKick
+from model.gates.Measurement import MeasurementGate
 from model.gates.PhaseKick import PhaseKickGate
 from model.gates.PhaseScale import PhaseScaleGate
 from model.gates.Rotation import Rotation
@@ -23,57 +24,67 @@ class QuantumInstance:
 
     def set_to(self, value):
         if not type(value) is int:
-            eprint("argument of set_to must be an integer")
-            return
+            msg = "argument of set_to must be an integer"
+            eprint(msg)
+            raise Exception(msg)
         nqubits = self.__circuit.circuit_qubits_number()
         if value > (2 ** nqubits) - 1:
-            eprint("setting register to value", value, "would cause an overflow with number of qubits = ", nqubits)
-            return
+            msg = "setting register to value {} would cause an overflow with number of qubits = {}".format(value, nqubits)
+            eprint(msg)
+            raise Exception(msg)
         self.__circuit.set_to(value)
 
     def __try_add_single_gate(self, i, j, name, parameters=None):
         if self.__circuit.step_already_simulated(j):
-            eprint("step",j,"has already been simulated")
-            return False
+            msg = "step {} has already been simulated".format(j)
+            eprint(msg)
+            raise Exception(msg)
         if not self.__circuit.can_add_gate_at(i, j):
-            eprint("can't add", name, "gate at target", i, "step:", j)
-            return False
+            msg = "can't add {} gate at target {} step: {}".format(name, i, j)
+            eprint(msg)
+            raise Exception(msg)
         gate = self.__circuit.add_gate(i, j, name)
         correct = True
+        msg = ""
         if parameters is not None:
             for parameter_name, value in parameters.items():
                 correct &= gate.is_parameter_correct(parameter_name, value)
                 if not correct:
-                    error = gate.why_is_parameter_incorrect(parameter_name, value)
-                    eprint(error)
+                    msg += gate.why_is_parameter_incorrect(parameter_name, value) + "\n"
             gate_correct = gate.is_gate_correct(parameters)
             if not gate_correct:
-                eprint(gate.why_gate_not_correct(parameters))
+                msg += gate.why_gate_not_correct(parameters) + '\n'
             else:
                 for parameter_name, value in parameters.items():
                     gate.set_parameter_value(parameter_name, value)
             correct &= gate_correct
         if not correct:
             self.__circuit.remove_gate(i, j)
-            return False
+            eprint(msg)
+            raise Exception(msg)
         return True
 
     def __add_controlled_gate(self, j, ctrls, target, name, parameters=None):
         if not is_iterable(ctrls):
-            eprint('controls must be iterable')
-            return
+            msg = 'controls must be iterable'
+            eprint(msg)
+            raise Exception(msg)
         is_added = self.__try_add_single_gate(target, j, name, parameters)
         if not is_added:
-            return
+            msg = "gate is not added at {}, {}".format(target, j)
+            eprint(msg)
+            raise Exception(msg)
         for ctrl in ctrls:
             if not self.__circuit.can_add_gate_at(ctrl, j):
-                eprint("can't place", name, "control at", ctrl, "step:", j)
+                msg = "can't place {} control at {} step: {}".format(name, ctrl, j)
                 self.__circuit.remove_gate(target, j)
-                return
+                eprint(msg)
+                raise Exception(msg)
             if not self.__circuit.can_put_target(ctrl, j, target, j):
-                eprint("can't connect", name, "control", ctrl, "to target", target, "at step", j)
+                msg = "can't connect {} control {} to target {} at step {}".format(name, ctrl, target, j)
                 self.__circuit.remove_gate(target, j)
-                return
+                eprint(msg)
+                raise Exception(msg)
         for ctrl in ctrls:
             self.__circuit.put_ctrl(ctrl, target, j)
 
@@ -129,6 +140,7 @@ class QuantumInstance:
             self.__try_add_single_gate(target, step, U, parameters)
         except Exception:
             traceback.print_exc()
+            raise
 
     def controlledX(self, step, ctrls, target):
         self.__add_controlled_gate(step, ctrls, target, X)
@@ -207,3 +219,11 @@ class QuantumInstance:
         nqubits = self.__circuit.circuit_qubits_number()
         current_psi = self.__circuit.current_simulation_psi()
         print_register_state(current_psi, nqubits)
+
+    def print_current_psi_without_qubits(self, qubits):
+        res_psi = self.__circuit.current_simulation_psi()
+        nqubits = self.__circuit.circuit_qubits_number()
+        for target in qubits:
+            measure_gate = MeasurementGate(target)
+            res_psi = measure_gate.transform(res_psi, nqubits)
+        print_register_state(res_psi, nqubits)

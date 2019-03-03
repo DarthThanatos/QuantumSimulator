@@ -212,6 +212,10 @@ class ProbsPanelMediator:
     def visualise_amplitude(self, amplitude):
         self.__probs_panel.visualize_complex(amplitude)
 
+    def probs_table_resized(self):
+        self.__probs_panel.layout()
+        self.__probs_panel.SetupScrolling()
+
 
 class ProbsPanel(ScrolledPanel):
 

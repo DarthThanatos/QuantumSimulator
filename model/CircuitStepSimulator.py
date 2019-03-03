@@ -3,6 +3,7 @@ from functools import reduce
 from model.CustomTensor import CustomTensor
 from model.FullMeasurement import FullMeasurement
 from model.MultQubitTransformation import MultiQubitTransformation
+from model.SingleGateTransformation import SingleGateTransformation
 from model.gates.Identity import Identity
 
 from util.Utils import print_register_state
@@ -68,17 +69,29 @@ class CircuitStepSimulator:
 
     def __on_current_step(self, log="next step"):
         # print(log, self.__step)
-        self.__perform_single_gates_tensor()
+        self.__perform_single_gates_operations()
         self.__measure()
         self.__process_multi_gates()
 
-    def __perform_single_gates_tensor(self):
+    def __perform_single_gates_operations(self):
         if not self.__single_gates.__contains__(self.__step):
             return
         prepared_dict = self.__prepared_single_gates_dict_for_current_step()
         sorted_gates = list(map(lambda pair: pair[1].qutip_object(), sorted(prepared_dict.items())))
+        nqubits = self.__circuit.circuit_qubits_number()
+        if 1. * len(self.__single_gates[self.__step]) / nqubits > .75:
+            self.__perform_tensor(sorted_gates)
+        else:
+            self.__perform_single_gates_hash_modifications()
+
+    def __perform_tensor(self, sorted_gates):
         custom_tensor = CustomTensor(sorted_gates)
         self.__current_psi = custom_tensor.transform(self.__current_psi)
+
+    def __perform_single_gates_hash_modifications(self):
+        for _, gate in self.__single_gates[self.__step].items():
+            single_gate_transformation = SingleGateTransformation(gate, self.__circuit.circuit_qubits_number())
+            self.__current_psi = single_gate_transformation.transform(self.__current_psi)
 
     def __measure(self):
         if not self.__measure_gates.__contains__(self.__step):
