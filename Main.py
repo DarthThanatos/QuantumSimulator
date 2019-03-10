@@ -27,7 +27,7 @@ class SimulatorApp(wx.App):
 
     def OnInit(self):
         wx.ToolTip.Enable(True)
-        frame = wx.MDIParentFrame(None, title="Hello Simulator", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
+        frame = wx.MDIParentFrame(None, title="QuCharm", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
         frame.Maximize(True)
         quantum_computer = QuantumComputer(nqbits=3)
         self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)

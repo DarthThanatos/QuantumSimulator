@@ -1,4 +1,5 @@
-from qutip import Qobj, ket, mcsolve, destroy, sigmax, sigmay,sigmaz, Options, serial_map, Bloch, hadamard_transform
+from qutip import Qobj, ket, mcsolve, destroy, sigmax, sigmay, sigmaz, Options, serial_map, Bloch, hadamard_transform, \
+    mesolve
 from matplotlib.pyplot import subplots
 from threading import Thread
 import time
@@ -44,7 +45,7 @@ if __name__ == '__main__':
         return res
 
     def getEvolution(H, psi0, times):
-        res = mcsolve(H, psi0, times, [destroy(2)], [], options=Options(average_states=True))
+        res = mesolve(H, psi0, times, [destroy(2)], [], options=Options(average_states=True, num_cpus=1))
         res = res.states
 
         # res = custom_mcsolve(H, psi0, times)

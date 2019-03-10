@@ -1,1 +1,1 @@
-python -m view.Main 
+python Main.py 

@@ -35,7 +35,7 @@ class CPhaseKick(Gate):
         return "{0}.{1}(step={2}, target={3}, k={4})\n".format(QUANTUM_INSTANCE, self.get_name(), step, self.target(), self._parameters[self._K])
 
     def generate_controlled_gate_code(self, step, controls):
-        return "{0}.{1}{2}(step={3}, ctrls={4}, target={5}, angle={6})\n".format(
+        return "{0}.{1}{2}(step={3}, ctrls={4}, target={5}, k={6})\n".format(
             QUANTUM_INSTANCE, CONTROLLED, self.get_name(),
             step, controls, self.target(),
             self._parameters[self._K]
