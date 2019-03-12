@@ -73,13 +73,21 @@ class CircuitStepSimulator:
         self.__measure()
         self.__process_multi_gates()
 
+
+    def __operators_number_enough(self):
+        nqubits = self.__circuit.circuit_qubits_number()
+        return 1. * len(self.__single_gates[self.__step]) / nqubits > .75
+
+    def __base_states_number_enough(self):
+        nqubits = self.__circuit.circuit_qubits_number()
+        return 1. * len(self.__current_psi.data.tocoo().row) / (2 ** nqubits) > .75
+
     def __perform_single_gates_operations(self):
         if not self.__single_gates.__contains__(self.__step):
             return
         prepared_dict = self.__prepared_single_gates_dict_for_current_step()
         sorted_gates = list(map(lambda pair: pair[1].qutip_object(), sorted(prepared_dict.items())))
-        nqubits = self.__circuit.circuit_qubits_number()
-        if 1. * len(self.__single_gates[self.__step]) / nqubits > .75:
+        if self.__base_states_number_enough():
             self.__perform_tensor(sorted_gates)
         else:
             self.__perform_single_gates_hash_modifications()

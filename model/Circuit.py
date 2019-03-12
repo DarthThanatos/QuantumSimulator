@@ -13,6 +13,7 @@ class Register:
         self.value = value
         self.nqubits = nqbits
         self.qbits = self.value_to_bits(self.value)
+        self.qubits_hidden = [False for _ in range(nqbits)]
 
     def value_to_bits(self, value):
         bin_truncated = list(map(lambda x: int(x), bin(value)[2:]))

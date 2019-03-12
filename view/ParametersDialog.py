@@ -353,7 +353,6 @@ class GateInspectorPanel(ScrolledPanel):
             if self.__sash_pos > 1:
                 self.__sash_pos -= 40
             else:
-                self.__gate_mediator.stop_inspecting_gate()
                 self.__sash_pos = 1
                 self.__timer.Stop()
             self.__sash_pos = max(1, self.__sash_pos)
@@ -373,8 +372,6 @@ class GateInspectorPanel(ScrolledPanel):
 
     def __show_inspector(self, should_show):
         self.__should_show = should_show
-        if not should_show:
-            self.__gate_mediator.init_stop_inspecting_gate()
         self.__timer.Start(10)
 
 

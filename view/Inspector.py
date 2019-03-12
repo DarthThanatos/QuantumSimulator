@@ -184,6 +184,54 @@ class HistoryPanel(ScrolledPanel):
         self.__create_new_history_view()
 
 
+class HideRegisterQubitsDialog(wx.Dialog):
+
+    def __init__(self, parent, already_hidden=None):
+        wx.Dialog.__init__(self, parent, size=(550, 250), title="Qubits in register selection", style=wx.NO_BORDER)
+        root_sizer = self.__new_root_sizer()
+        root_sizer.Layout()
+        self.SetSizer(root_sizer)
+
+        x,y = get_screen_middle_point()
+        WIDTH, HEIGHT = self.GetSize()
+        x,y = x - WIDTH/2, y - HEIGHT/2
+        self.SetPosition((x, y))
+
+    def __new_root_sizer(self):
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(20)
+        sizer.Add(new_big_font_label(self, "Select qubits to hide in the register"), 0, wx.CENTER)
+        sizer.AddSpacer(40)
+        sizer.Add(self.__new_hide_checkboxes_panel(), 0, wx.CENTER)
+        sizer.AddSpacer(30)
+        sizer.Add(self.__new_buttons_panel(), 0, wx.CENTER)
+        return sizer
+
+    def __new_hide_checkboxes_panel(self):
+        panel = ScrolledPanel(self, size=(500, 85), style=wx.SUNKEN_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        for i in range(13):
+            checkbox = wx.CheckBox(panel, label="Hide qubit {}".format(i))
+            sizer.Add(checkbox, 0, wx.CENTER)
+        panel.SetSizer(sizer)
+        sizer.Layout()
+        panel.SetupScrolling()
+        return panel
+
+    def __new_buttons_panel(self):
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(newStandardButton(self, (75, 25), "ok", self.__on_ok))
+        sizer.AddSpacer(20)
+        sizer.Add(newStandardButton(self, (75, 25), "cancel", self.__on_cancel))
+        return sizer
+
+    def __on_ok(self, _):
+        self.EndModal(wx.OK)
+
+    def __on_cancel(self, _):
+        self.EndModal(wx.CANCEL)
+
+
 class ProbsPanelMediator:
 
     def __init__(self, probs_panel):
@@ -215,6 +263,15 @@ class ProbsPanelMediator:
     def probs_table_resized(self):
         self.__probs_panel.layout()
         self.__probs_panel.SetupScrolling()
+
+    def on_hide_register_qubits(self, quantum_computer):
+        dialog = HideRegisterQubitsDialog(self.__probs_panel)
+        status = dialog.ShowModal()
+        if status == wx.OK:
+            print("ok")
+        else:
+            print("cancel")
+        dialog.Destroy()
 
 
 class ProbsPanel(ScrolledPanel):
@@ -248,8 +305,17 @@ class ProbsPanel(ScrolledPanel):
         self.__root_sizer.Add(new_big_font_label(self, "State of the register"), 0, wx.CENTER)
         self.__root_sizer.AddSpacer(20)
         self.__root_sizer.Add(self.__new_probabilities_table(), 0, wx.CENTER)
+        self.__root_sizer.AddSpacer(20)
+        self.__root_sizer.Add(self.__new_hide_register_qubits_button(),0, wx.CENTER)
         # self.__root_sizer.Add(self.__qubit_state_argand(), wx.CENTER, wx.EXPAND)
         self.__root_sizer.Layout()
+
+    def __new_hide_register_qubits_button(self):
+        btn = newStandardButton(self, (75,25), "hide qubits", self.__on_hide_register_qubits)
+        return btn
+
+    def __on_hide_register_qubits(self, _):
+        self.__probabilities_mediator.on_hide_register_qubits(self.__quantum_computer)
 
     def __new_probabilities_table(self):
         representation = self.__gate_mediator.current_psi_representation(self.__quantum_computer)
@@ -339,10 +405,19 @@ class CircuitInspector(wx.SplitterWindow):
 
     def __new_probs_history_splitter(self):
         probs_history_splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
-        history_panel = HistoryPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
-        gateinsp_probs_splitter = self.__new_gateinsp_probs_splitter(probs_history_splitter)
-        probs_history_splitter.SplitHorizontally(gateinsp_probs_splitter, history_panel, INSPECTOR_MAIN_SASH)
+        gate_insp_history_splitter = self.__new_gate_inspector_history_splitter(probs_history_splitter)
+        probs_panel = ProbsPanel(probs_history_splitter, self.__gate_mediator, self.__quantum_computer)
+        self.__probs_panel = probs_panel
+        probs_history_splitter.SplitHorizontally(probs_panel, gate_insp_history_splitter, INSPECTOR_MAIN_SASH)
         return probs_history_splitter
+
+    def __new_gate_inspector_history_splitter(self, probs_history_splitter):
+        gate_inspt_hist_splitter = wx.SplitterWindow(probs_history_splitter, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)
+        history_panel = HistoryPanel(gate_inspt_hist_splitter, self.__gate_mediator, self.__quantum_computer)
+        gate_inspector_panel = GateInspectorPanel(gate_inspt_hist_splitter, self.__gate_mediator)
+        gate_inspt_hist_splitter.SplitVertically(gate_inspector_panel, history_panel, 1)
+        return gate_inspt_hist_splitter
+
 
     def __new_gateinsp_probs_splitter(self, probs_history_splitter):
         gateinsp_probs_splitter = wx.SplitterWindow(probs_history_splitter, style=wx.SP_LIVE_UPDATE | wx.SP_3DSASH)

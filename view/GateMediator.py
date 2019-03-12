@@ -66,15 +66,9 @@ class GateMediator:
         self.__schodringer_mediator.set_gate_mediator(self)
 
     def inspect_gate(self, selected_gate_tile, quantum_computer):
-        self.__probs_panel.Show(False)
         gate = quantum_computer.get_gate_at(*selected_gate_tile.ij)
         self.__gate_inspector_panel.inspect(gate)
 
-    def init_stop_inspecting_gate(self):
-        self.__probs_panel.show_partially()
-
-    def stop_inspecting_gate(self):
-        self.__probs_panel.show_fully()
 
     def gateSelected(self, gate_name, gate_copy=None):
         # called when a view representing a gate has been clicked or when a copy of existing gate has been made
