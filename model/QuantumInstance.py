@@ -1,5 +1,6 @@
 import traceback
 
+from model.Circuit import print_register_state
 from model.constants import *
 from model.gates.CPhase import CPhaseKick
 from model.gates.Measurement import MeasurementGate
@@ -10,8 +11,7 @@ from model.gates.RotationX import RotationXGate
 from model.gates.RotationY import RotationYGate
 from model.gates.RotationZ import RotationZGate
 from model.gates.U import UGate
-from util.Utils import eprint, is_iterable, print_register_state
-
+from util.Utils import eprint, is_iterable
 
 class QuantumInstance:
 

@@ -17,6 +17,12 @@ class QuantumComputer:
         self.__circuit.update_schodringer_experiments()
         self.__quantum_walk = QuantumWalk()
 
+    def get_hidden_qubits(self):
+        return self.__circuit.get_hidden_qubits()
+
+    def set_hidden_qubits(self, hidden_qubits):
+        self.__circuit.set_hidden_qubits(hidden_qubits)
+
     def get_max_simulation_step(self):
         return self.__circuit.get_max_simulation_step()
 

@@ -5,46 +5,95 @@ from qutip import ket
 from model.CircuitStepSimulator import CircuitStepSimulator
 from model.constants import MEASURE
 from model.gates.GateCreator import GateCreator
-from util.Utils import flatten_dicts
+from util.Utils import flatten_dicts, to_bin_str
+import numpy as np
 
+
+def print_register_state(psi, nqubits):
+    for existing_state in psi.data.tocoo().row:
+        binS = to_bin_str(existing_state, nqubits)
+        amplitude = psi.data[existing_state, 0]
+        probability = np.abs(amplitude) ** 2
+        print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
+    print("="*20)
 
 class Register:
+
     def __init__(self, nqbits, value=0):
-        self.value = value
-        self.nqubits = nqbits
-        self.qbits = self.value_to_bits(self.value)
-        self.qubits_hidden = [False for _ in range(nqbits)]
+        self.__value = value
+        self.__nqubits = nqbits
+        self.__qbits = self.value_to_bits(self.__value)
+        self.__qubits_hidden = [False for _ in range(nqbits)]
 
-    def value_to_bits(self, value):
+    def qubits_hidden(self):
+        return self.__qubits_hidden
+
+    def set_hidden_qubits(self, hidden_qubits):
+        # a list of bools, qubit is hidden if hidden_qubits[i] == True
+        assert all(type(x) == bool for x in hidden_qubits) \
+               and len(hidden_qubits) == self.__nqubits
+        self.__qubits_hidden = list(hidden_qubits)
+
+    def __value_without_hidden(self, value):
+        bin_s = to_bin_str(value, self.__nqubits)
+        filtered_enum = list(filter(lambda iv: not self.__qubits_hidden[iv[0]], enumerate(bin_s)))
+        filtered_bin_s = "".join(map(lambda iv: iv[1], filtered_enum))
+        return int(filtered_bin_s, 2)
+
+    def value(self, with_hidden=True):
+        return self.__value if with_hidden else self.__value_without_hidden(self.__value)
+
+    def nqubits(self, with_hidden=True):
+        return self.__nqubits if with_hidden else sum(h for h in self.__qubits_hidden if h)
+
+    def __visible_qubits_list(self, bit_list):
+        filtered_enum = list(filter(lambda iv: not self.__qubits_hidden[iv[0]], enumerate(bit_list)))
+        only_visible = list(map(lambda iv: iv[1], filtered_enum))
+        return only_visible
+
+    def qbits(self, with_hidden=True):
+        return self.__qbits if with_hidden else self.__visible_qubits_list(self.__qbits)
+
+    def value_to_bits(self, value, with_hidden=True):
+        if not with_hidden:
+            value = self.__value_without_hidden(value)
         bin_truncated = list(map(lambda x: int(x), bin(value)[2:]))
-        return [0 for i in range(self.nqubits - bin_truncated.__len__())] + bin_truncated
+        return [0 for i in range(self.__nqubits - bin_truncated.__len__())] + bin_truncated
 
-    def value_to_ket(self, value):
+    def value_to_ket(self, value, with_hidden=True):
+        if not with_hidden:
+            value = self.__value_without_hidden(value)
         bin_truncated = list(map(lambda x: int(x), bin(value)[2:]))
         return ket(bin_truncated)
 
-    def bit_list_to_string_value(self, bitList):
+    def bit_list_to_string_value(self, bitList, with_hidden=True):
+        if not with_hidden:
+            bitList = self.__visible_qubits_list(bitList)
         return "".join(map(lambda x: str(x), bitList))
 
-    def bitlist_to_decimal(self, bitList):
+    def bitlist_to_decimal(self, bitList, with_hidden=True):
         decimal = 0
         multiplier = 1
+        if not with_hidden:
+            bitList = self.__visible_qubits_list(bitList)
         for i in range(len(bitList) - 1, -1, -1):
             decimal += bitList[i] * multiplier
             multiplier *= 2
         return decimal
 
+    def initial_qutip_ket(self, with_hidden=True):
+        bit_list = self.__qbits
+        if not with_hidden:
+            bit_list = self.__visible_qubits_list(bit_list)
+        return ket(self.bit_list_to_string_value(bit_list))
+
     def swap_bit_at(self, i):
-        b = self.qbits[i]
-        self.qbits[i] = 1 if b == 0 else 0
-        self.value = self.bitlist_to_decimal(self.qbits)
+        b = self.__qbits[i]
+        self.__qbits[i] = 1 if b == 0 else 0
+        self.__value = self.bitlist_to_decimal(self.__qbits)
 
-    def update_register_with(self, newValue, newBitlist):
-        self.value = newValue
-        self.qbits = newBitlist
-
-    def initial_qutip_ket(self):
-        return ket(self.bit_list_to_string_value(self.qbits))
+    def print_register(self, with_hidden=True):
+        pass
 
 
 class Circuit:
@@ -65,6 +114,15 @@ class Circuit:
         self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
         self.__multi_gates = {}
 
+    def print_register(self, with_hidden=True):
+        self.__register.print_register(with_hidden)
+
+    def get_hidden_qubits(self):
+        return self.__register.qubits_hidden()
+
+    def set_hidden_qubits(self, hidden_qubits):
+        self.__register.set_hidden_qubits(hidden_qubits)
+
     def set_to(self, value):
         ket_value = self.__register.value_to_ket(value)
         self.__step_simulator.set_current_psi(ket_value)
@@ -73,7 +131,7 @@ class Circuit:
         return self.__step_simulator.step_already_simulated(step)
 
     def initial_int_value(self):
-        return self.__register.value
+        return self.__register.value()
 
     def current_simulation_psi(self):
         psi = self.__step_simulator.current_simulation_psi()
@@ -89,12 +147,12 @@ class Circuit:
         return self.add_gate(i, j, gate_copy.get_name(), gate_copy.parameters())
 
     def circuit_qubits_number(self):
-        return self.__register.nqubits
+        return self.__register.nqubits()
 
     def can_add_gate_at(self, i, j):
         if j < 0:
             return False
-        if self.__register.nqubits <= i or i < 0:
+        if self.__register.nqubits() <= i or i < 0:
             return False
         if self.__overlaps_single_gate(i, j):
             return False
@@ -129,7 +187,7 @@ class Circuit:
         return gate
 
     def qbit_value_at(self, i):
-        return self.__register.qbits[i]
+        return self.__register.qbits()[i]
 
     def swap_qbit_value_at(self, i):
         self.__register.swap_bit_at(i)
@@ -148,7 +206,7 @@ class Circuit:
 
     def update_schodringer_experiments(self):
         # check if can add schodringer experiment working only with one qubit
-        if self.__register.nqubits == 1:
+        if self.__register.nqubits() == 1:
             self.__quantum_computer.add_schodringer_experiment_if_not_exists()
         else:
             self.__quantum_computer.remove_schodringer_experiment_if_exists()
@@ -180,20 +238,20 @@ class Circuit:
         self.__grid.update({x - 1: values_of_bigger_indicies[x] for x in indecies_bigger_than_i})
 
     def __register_with_removed_qbit(self, i):
-        v = self.__register.value
+        v = self.__register.value()
         bitsList = self.__register.value_to_bits(v)
         bitlist_with_removed_qbit = bitsList[:i] + bitsList[i + 1:]
         return Register(
-            nqbits=self.__register.nqubits - 1,
+            nqbits=self.__register.nqubits() - 1,
             value=self.__register.bitlist_to_decimal(bitlist_with_removed_qbit)
         )
 
     def __register_with_added_qbit(self):
-        v = self.__register.value
+        v = self.__register.value()
         bitsList = self.__register.value_to_bits(v)
         bitlist_with_added_qbit = bitsList + [0]
         return Register(
-            nqbits=self.__register.nqubits + 1,
+            nqbits=self.__register.nqubits() + 1,
             value=self.__register.bitlist_to_decimal(bitlist_with_added_qbit)
         )
 
@@ -222,7 +280,7 @@ class Circuit:
     def can_put_target(self, i_ctrl, j_ctrl, i_target, j_target):
         if j_target != j_ctrl or i_ctrl == i_target or j_ctrl < 0:
             return False
-        if self.__register.nqubits <= i_ctrl or i_ctrl < 0:
+        if self.__register.nqubits() <= i_ctrl or i_ctrl < 0:
             return False
         if not self.__target_exists_at(i_target, j_target):
             return False
@@ -353,3 +411,8 @@ class Circuit:
     def get_max_simulation_step(self):
         return self.__step_simulator.get_max_simulation_step()
 
+
+if __name__ == '__main__':
+    reg = Register(nqbits=5, value=5)
+    reg.set_hidden_qubits([False, False, False, True, False])
+    print(reg.value(with_hidden=False))

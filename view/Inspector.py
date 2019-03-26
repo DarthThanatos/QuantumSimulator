@@ -186,8 +186,13 @@ class HistoryPanel(ScrolledPanel):
 
 class HideRegisterQubitsDialog(wx.Dialog):
 
-    def __init__(self, parent, already_hidden=None):
-        wx.Dialog.__init__(self, parent, size=(550, 250), title="Qubits in register selection", style=wx.NO_BORDER)
+    def __init__(self, parent, checked_indices):
+        wx.Dialog.__init__(
+            self, parent, size=(550, 250),
+            title="Qubits in register selection",
+            style=wx.NO_BORDER
+        )
+        self.__checked_indices = list(checked_indices)
         root_sizer = self.__new_root_sizer()
         root_sizer.Layout()
         self.SetSizer(root_sizer)
@@ -210,8 +215,15 @@ class HideRegisterQubitsDialog(wx.Dialog):
     def __new_hide_checkboxes_panel(self):
         panel = ScrolledPanel(self, size=(500, 85), style=wx.SUNKEN_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        for i in range(13):
+        for i, hidden in enumerate(self.__checked_indices):
             checkbox = wx.CheckBox(panel, label="Hide qubit {}".format(i))
+
+            def on_check(ev, index=i):
+                is_checked = ev.GetEventObject().GetValue()
+                self.__checked_indices[index] = is_checked
+
+            checkbox.Bind(wx.EVT_CHECKBOX, on_check)
+            checkbox.SetValue(hidden)
             sizer.Add(checkbox, 0, wx.CENTER)
         panel.SetSizer(sizer)
         sizer.Layout()
@@ -224,6 +236,9 @@ class HideRegisterQubitsDialog(wx.Dialog):
         sizer.AddSpacer(20)
         sizer.Add(newStandardButton(self, (75, 25), "cancel", self.__on_cancel))
         return sizer
+
+    def get_checked(self):
+        return self.__checked_indices
 
     def __on_ok(self, _):
         self.EndModal(wx.OK)
@@ -265,12 +280,12 @@ class ProbsPanelMediator:
         self.__probs_panel.SetupScrolling()
 
     def on_hide_register_qubits(self, quantum_computer):
-        dialog = HideRegisterQubitsDialog(self.__probs_panel)
+        hidden_qubits = quantum_computer.get_hidden_qubits()
+        dialog = HideRegisterQubitsDialog(self.__probs_panel, hidden_qubits)
         status = dialog.ShowModal()
         if status == wx.OK:
-            print("ok")
-        else:
-            print("cancel")
+            hidden_qubits = dialog.get_checked()
+            quantum_computer.set_hidden_qubits(hidden_qubits)
         dialog.Destroy()
 
 

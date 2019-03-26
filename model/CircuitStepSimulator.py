@@ -6,7 +6,6 @@ from model.MultQubitTransformation import MultiQubitTransformation
 from model.SingleGateTransformation import SingleGateTransformation
 from model.gates.Identity import Identity
 
-from util.Utils import print_register_state
 
 
 class CircuitStepSimulator:

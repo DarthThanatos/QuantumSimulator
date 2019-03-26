@@ -2,7 +2,7 @@ from qutip import Qobj, ket
 
 from model.gates import Gate
 from model.gates.X import XGate
-from util.Utils import to_bin_str, print_register_state
+from util.Utils import to_bin_str
 from qutip.cy.spconvert import arr_coo2fast
 
 
@@ -79,6 +79,8 @@ class MultiQubitTransformation:
 
 
 if __name__ == "__main__":
+    from model.Circuit import print_register_state
+
     x = XGate(5)
     # psi = Qobj([[.5] for _ in range(2 ** 6)])
     psi = ket("110010")

@@ -3,8 +3,8 @@ from qutip import Qobj, ket
 from model.gates import Gate
 from model.gates.Hadamard import HadamardGate
 from model.gates.X import XGate
-from util.Utils import print_register_state
 from qutip.cy.spconvert import arr_coo2fast
+
 
 
 class SingleGateTransformation:
@@ -58,6 +58,8 @@ class SingleGateTransformation:
 
 
 if __name__ == "__main__":
+    from model.Circuit import print_register_state
+
     h = HadamardGate(5)
     # psi = Qobj([[.5] for _ in range(2 ** 6)])
     psi = ket("110010")

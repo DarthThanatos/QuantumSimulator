@@ -97,14 +97,6 @@ def get_screen_middle_point():
 def to_bin_str(value, nqubits):
     return bin(value)[2:].zfill(nqubits)
 
-def print_register_state(psi, nqubits):
-    for existing_state in psi.data.tocoo().row:
-        binS = to_bin_str(existing_state, nqubits)
-        amplitude = psi.data[existing_state, 0]
-        probability = np.abs(amplitude) ** 2
-        print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
-    print("="*20)
-
 def new_big_font_label(parent, label_txt):
     label = wx.StaticText(parent, label=label_txt, style=wx.ALIGN_CENTRE)
     font = wx.Font(18, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.NORMAL)
