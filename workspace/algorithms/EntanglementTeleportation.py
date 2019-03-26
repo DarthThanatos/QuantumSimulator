@@ -7,7 +7,7 @@ def init_entangled_psi(quantum_instance):
 	quantum_instance.next_step()
 	quantum_instance.next_step()
 	print("initial psi register")
-	quantum_instance.print_current_psi()
+	quantum_instance.print_register_state()
 
 def to_bell_basis(quantum_instance):
 	quantum_instance.H(step=3, target=2)
@@ -35,4 +35,4 @@ if __name__=='__main__':
 	init_entangled_psi(quantum_instance)
 	entanglement_teleportation(quantum_instance)
 	print("final psi register")
-	quantum_instance.print_current_psi()
+	quantum_instance.print_register_state()

@@ -1,9 +1,7 @@
 import traceback
 
-from model.Circuit import print_register_state
 from model.constants import *
 from model.gates.CPhase import CPhaseKick
-from model.gates.Measurement import MeasurementGate
 from model.gates.PhaseKick import PhaseKickGate
 from model.gates.PhaseScale import PhaseScaleGate
 from model.gates.Rotation import Rotation
@@ -215,15 +213,12 @@ class QuantumInstance:
         measured = self.__circuit.current_simulation_psi()
         return measured.data.tocoo().row[0]
 
-    def print_current_psi(self):
+    def set_hidden_qubits(self, hidden_qubits):
+        # here we expect a list of numbers indicating valid indices of qubits
         nqubits = self.__circuit.circuit_qubits_number()
-        current_psi = self.__circuit.current_simulation_psi()
-        print_register_state(current_psi, nqubits)
+        assert all(type(x) == int and 0 <= x < nqubits for x in hidden_qubits), "hidden_qubits should be a list of ints in range(0, nqubits), where nqubits is the number of qubits in the original register"
+        hidden_qubits = [True if i in hidden_qubits else False for i in range(nqubits)]
+        self.__circuit.set_hidden_qubits(hidden_qubits)
 
-    def print_current_psi_without_qubits(self, qubits):
-        res_psi = self.__circuit.current_simulation_psi()
-        nqubits = self.__circuit.circuit_qubits_number()
-        for target in qubits:
-            measure_gate = MeasurementGate(target)
-            res_psi = measure_gate.transform(res_psi, nqubits)
-        print_register_state(res_psi, nqubits)
+    def print_register_state(self, with_hidden=True):
+        self.__circuit.print_register_state(with_hidden)

@@ -7,15 +7,8 @@ from model.constants import MEASURE
 from model.gates.GateCreator import GateCreator
 from util.Utils import flatten_dicts, to_bin_str
 import numpy as np
+from model.gates.Measurement import MeasurementGate
 
-
-def print_register_state(psi, nqubits):
-    for existing_state in psi.data.tocoo().row:
-        binS = to_bin_str(existing_state, nqubits)
-        amplitude = psi.data[existing_state, 0]
-        probability = np.abs(amplitude) ** 2
-        print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
-    print("="*20)
 
 class Register:
 
@@ -30,8 +23,9 @@ class Register:
 
     def set_hidden_qubits(self, hidden_qubits):
         # a list of bools, qubit is hidden if hidden_qubits[i] == True
-        assert all(type(x) == bool for x in hidden_qubits) \
-               and len(hidden_qubits) == self.__nqubits
+        assert all(type(x) == bool for x in hidden_qubits), "hidden_qubits should be a list of bools"
+        assert len(hidden_qubits) == self.__nqubits, "hidden_qubits should have length of the original register"
+        assert not all(x for x in hidden_qubits), "At least one qubit should not be hidden"
         self.__qubits_hidden = list(hidden_qubits)
 
     def __value_without_hidden(self, value):
@@ -44,7 +38,7 @@ class Register:
         return self.__value if with_hidden else self.__value_without_hidden(self.__value)
 
     def nqubits(self, with_hidden=True):
-        return self.__nqubits if with_hidden else sum(h for h in self.__qubits_hidden if h)
+        return self.__nqubits if with_hidden else sum(not h for h in self.__qubits_hidden)
 
     def __visible_qubits_list(self, bit_list):
         filtered_enum = list(filter(lambda iv: not self.__qubits_hidden[iv[0]], enumerate(bit_list)))
@@ -92,8 +86,40 @@ class Register:
         self.__qbits[i] = 1 if b == 0 else 0
         self.__value = self.bitlist_to_decimal(self.__qbits)
 
-    def print_register(self, with_hidden=True):
-        pass
+    def __prepared_state(self, psi, with_hidden=True):
+        if not with_hidden:
+            for target in self.__qubits_hidden:
+                measure_gate = MeasurementGate(target)
+                psi = measure_gate.transform(psi, self.__nqubits)
+        existing_states_with_amplitudes = dict(
+            map(
+                lambda x: (self.__value_without_hidden(x), psi.data[x, 0]) if not with_hidden else (x, psi.data[x, 0]), 
+                psi.data.tocoo().row
+            )
+        )
+        return psi, existing_states_with_amplitudes
+
+    def print_register_state(self, psi, with_hidden=True):
+        psi, existing_states_with_amplitudes = self.__prepared_state(psi, with_hidden)
+        for existing_state, amplitude in existing_states_with_amplitudes.items():
+            binS = to_bin_str(existing_state, self.nqubits(with_hidden))
+            probability = np.abs(amplitude) ** 2
+            print("|{}> |{}>: prob: {} ampl: {}".format(existing_state, binS, probability, amplitude))
+        print("="*20)
+
+    def current_psi_representation(self, psi, with_hidden=True):
+        nqubits = self.nqubits(with_hidden)
+        representation = []
+        psi, existing_states_with_amplitudes = self.__prepared_state(psi, with_hidden)
+        for existing_state, amplitude in existing_states_with_amplitudes.items():
+            binS = to_bin_str(existing_state, nqubits)
+            probability = np.abs(amplitude) ** 2
+            valueS = "|{}>".format(existing_state)
+            qubitsS = "|{}>".format(binS)
+            probabilityS = "{:.2f}".format(probability)
+            amplitudeS = "{:.2f}".format(amplitude)
+            representation.append((valueS, qubitsS, probabilityS, amplitudeS))
+        return representation
 
 
 class Circuit:
@@ -114,8 +140,13 @@ class Circuit:
         self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
         self.__multi_gates = {}
 
-    def print_register(self, with_hidden=True):
-        self.__register.print_register(with_hidden)
+    def current_psi_representation(self, with_hidden=True):
+        psi = self.current_simulation_psi()
+        return self.__register.current_psi_representation(psi, with_hidden)
+
+    def print_register_state(self, with_hidden=True):
+        psi = self.current_simulation_psi()
+        self.__register.print_register_state(psi, with_hidden)
 
     def get_hidden_qubits(self):
         return self.__register.qubits_hidden()
@@ -411,8 +442,9 @@ class Circuit:
     def get_max_simulation_step(self):
         return self.__step_simulator.get_max_simulation_step()
 
-
 if __name__ == '__main__':
     reg = Register(nqbits=5, value=5)
+    psi = ket("00101")
+    reg.print_register_state()
     reg.set_hidden_qubits([False, False, False, True, False])
-    print(reg.value(with_hidden=False))
+    reg.print_register_state(psi, with_hidden=False)

@@ -158,16 +158,5 @@ class GateMediator:
         self.__tree.stop_observer()
 
     def current_psi_representation(self, quantum_computer):
-        psi = quantum_computer.current_simulation_psi()
-        nqubits = quantum_computer.circuit_qubits_number()
-        representation = []
-        for existing_state in psi.data.tocoo().row:
-            binS = to_bin_str(existing_state, nqubits)
-            amplitude = psi.data[existing_state, 0]
-            probability = np.abs(amplitude) ** 2
-            valueS = "|{}>".format(existing_state)
-            qubitsS = "|{}>".format(binS)
-            probabilityS = "{:.2f}".format(probability)
-            amplitudeS = "{:.2f}".format(amplitude)
-            representation.append((valueS, qubitsS, probabilityS, amplitudeS))
-        return representation
+        return quantum_computer.current_psi_representation(with_hidden=False)
+        

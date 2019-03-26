@@ -44,7 +44,8 @@ if __name__ == '__main__':
 	for i in range(15):
 		quantum_instance.X(step=15 + i, target=i%3)
 	quantum_instance.next_step()
-	quantum_instance.print_current_psi()
+	quantum_instance.set_hidden_qubits([0, 1, 2])
+	quantum_instance.print_register_state(with_hidden=False)
 	quantum_instance.next_step()
 	quantum_instance.next_step()
 	quantum_instance.next_step()

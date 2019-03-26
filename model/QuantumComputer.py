@@ -23,6 +23,9 @@ class QuantumComputer:
     def set_hidden_qubits(self, hidden_qubits):
         self.__circuit.set_hidden_qubits(hidden_qubits)
 
+    def current_psi_representation(self, with_hidden=True):
+        return self.__circuit.current_psi_representation(with_hidden)
+
     def get_max_simulation_step(self):
         return self.__circuit.get_max_simulation_step()
 

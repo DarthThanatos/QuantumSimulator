@@ -285,8 +285,12 @@ class ProbsPanelMediator:
         status = dialog.ShowModal()
         if status == wx.OK:
             hidden_qubits = dialog.get_checked()
-            quantum_computer.set_hidden_qubits(hidden_qubits)
+            try:
+                quantum_computer.set_hidden_qubits(hidden_qubits)
+            except Exception as e:
+                wx.MessageBox(str(e), 'Error', wx.OK | wx.ICON_ERROR)
         dialog.Destroy()
+        self.__probs_panel.reset_view()
 
 
 class ProbsPanel(ScrolledPanel):
@@ -476,4 +480,3 @@ class CircuitInspector(wx.SplitterWindow):
     def onresize(self, ev):
         self.__bloch_canvas.initSize()
         ev.Skip()
-

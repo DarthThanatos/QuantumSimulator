@@ -58,10 +58,11 @@ class SingleGateTransformation:
 
 
 if __name__ == "__main__":
-    from model.Circuit import print_register_state
+    from model.Circuit import Register
 
     h = HadamardGate(5)
     # psi = Qobj([[.5] for _ in range(2 ** 6)])
     psi = ket("110010")
     transf = SingleGateTransformation(h, 6)
-    print_register_state(transf.transform(psi), 6)
+    reg = Register(6)
+    reg.print_register_state(transf.transform(psi))

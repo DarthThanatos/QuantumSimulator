@@ -6,7 +6,7 @@ def init_psi(quantum_instance):
 	quantum_instance.r_y(step=1, target=1, angle=0.524) 
 	quantum_instance.next_step()
 	print("initial psi register")
-	quantum_instance.print_current_psi()
+	quantum_instance.print_register_state()
 
 def to_bell_basis(quantum_instance):
 	quantum_instance.H(step=2, target=2)
@@ -32,4 +32,4 @@ if __name__=='__main__':
 	init_psi(quantum_instance)
 	dense_coding(quantum_instance)
 	print("final psi register")
-	quantum_instance.print_current_psi()
+	quantum_instance.print_register_state()
