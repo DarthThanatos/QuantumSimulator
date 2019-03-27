@@ -330,7 +330,7 @@ class ProbsPanel(ScrolledPanel):
         self.__root_sizer.Layout()
 
     def __new_hide_register_qubits_button(self):
-        btn = newStandardButton(self, (75,25), "hide qubits", self.__on_hide_register_qubits)
+        btn = newStandardButton(self, (115,25), "show/hide qubits", self.__on_hide_register_qubits)
         return btn
 
     def __on_hide_register_qubits(self, _):

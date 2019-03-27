@@ -1,6 +1,6 @@
 from model.gates.U import UGate
 from util.Utils import get_screen_middle_point, flatten_dicts, newIconButton, InspectorMatrixPanel, newStandardButton, \
-    ImgPanel, MatrixPanel
+    ImgPanel, MatrixPanel, toast
 import wx
 
 from view.constants import INSPECTOR_MATRIX_FIGURE_ID, INSPECTOR_SYMBOLIC_MATRIX_FIGURE_ID
@@ -31,7 +31,7 @@ class ParameterMediator:
     def setup_apply_button(self, apply_btn):
         self.__apply_button = apply_btn
         kwargs = self.__get_gate_kwargs()
-        apply_btn.Enable(self._gate.is_gate_correct(kwargs))
+        # apply_btn.Enable(self._gate.is_gate_correct(kwargs))
 
     def add_parameter_view(self, parameter_view):
         self.__parameters_views.append(parameter_view)
@@ -52,17 +52,22 @@ class ParameterMediator:
         self.__on_parameter_input_changed()
 
     def parameter_about_to_change(self):
-        self.__apply_button.Enable(False)
+        # self.__apply_button.Enable(False)
+        pass
 
     def __on_parameter_input_changed(self):
         kwargs = self.__get_gate_kwargs()
-        self.__apply_button.Enable(self._gate.is_gate_correct(kwargs))
+        # self.__apply_button.Enable(self._gate.is_gate_correct(kwargs))
         error_msg = \
             self._gate.why_gate_not_correct(kwargs) \
             if not self._gate.is_gate_correct(kwargs) \
             else ""
         self.__gate_error_log.SetLabelText(error_msg)
         self.__parameters_frame.layout()
+
+    def is_gate_correct(self):
+        kwargs = self.__get_gate_kwargs()
+        return self._gate.is_gate_correct(kwargs)
 
     def on_apply(self):
         for name, value in self.__get_gate_kwargs().items():
@@ -238,8 +243,9 @@ class ParametersPanel(wx.Panel):
         return error_sizer, error_logs
 
     def __on_ok(self, _):
-        self.__parameters_mediator.on_apply()
-        self.GetParent().on_ok()
+        if self.__parameters_mediator.is_gate_correct():
+            self.__parameters_mediator.on_apply()
+            self.GetParent().on_ok()
 
     def __on_cancel(self, _):
         self.GetParent().on_cancel()
@@ -342,7 +348,7 @@ class GateInspectorPanel(ScrolledPanel):
         return panel
 
     def on_ok(self):
-        pass  # is demanded by ParametersPanel class
+        toast(self, "applied changes", seconds=1)
 
     def on_cancel(self):
         pass  # is demanded by ParametersPanel class

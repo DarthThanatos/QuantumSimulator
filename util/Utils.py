@@ -231,3 +231,40 @@ class InspectorMatrixPanel(CenteredTextLatexPanel):
         text = r'$' + self.__symbol + r' = ' + self.__str_latex_matrix + '$'
         return text
 
+
+class ToastPopup(wx.PopupWindow):
+    """"""
+
+    def __init__(self, parent, text, seconds):
+        """Constructor"""
+        wx.PopupWindow.__init__(self, parent, wx.SIMPLE_BORDER)
+        self.__ms = seconds * 1000
+        panel = self.__new_panel()
+        st = wx.StaticText(panel, -1, text, pos=(10,10))
+        self.__position_self(st, panel)
+        self.__new_timer(panel)
+
+    def __new_panel(self):
+        panel = wx.Panel(self)
+        panel.SetBackgroundColour("CADET BLUE")
+        return panel
+
+    def __new_timer(self, panel):
+        self.__live_timer = wx.Timer(panel)
+        panel.Bind(wx.EVT_TIMER, self.__on_live_timer, self.__live_timer)
+        self.__live_timer.Start(self.__ms, oneShot=True)
+
+    def __position_self(self, st, panel):
+        sz = st.GetBestSize()
+        self.SetSize((sz.width+20, sz.height+20))
+        panel.SetSize((sz.width+20, sz.height+20))
+        self.SetPosition(get_screen_middle_point())
+
+    def __on_live_timer(self, ev):
+        self.Destroy()
+
+
+def toast(parent, txt, seconds):
+    popup = ToastPopup(parent, txt, seconds)
+    popup.Position(get_screen_middle_point(), (0, 0))
+    popup.Show(True)
