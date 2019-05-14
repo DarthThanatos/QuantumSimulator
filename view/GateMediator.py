@@ -1,8 +1,10 @@
 import wx
 from qutip import Qobj
 
-from util.Utils import to_bin_str
+from util.Utils import to_bin_str, show_exc_dialog
 import numpy as np
+import sys, os
+import traceback
 
 class GateMediator:
 
@@ -94,6 +96,7 @@ class GateMediator:
         if removed_gate:
             self.__gate_inspector_panel.on_close()
 
+
     def run_in_console(self, quantum_computer):
         # called when "run in console" button was clicked
         code = self.__code_notebook.get_current_code_string()
@@ -104,7 +107,7 @@ class GateMediator:
             self.__gate_inspector_panel.on_close()
             self.__history_panel.reset_view()
         except Exception as e:
-            wx.MessageBox(str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)
+            show_exc_dialog(e)
 
     def build_circuit_from_code(self, quantum_computer):
         code = self.__code_notebook.get_current_code_string()
@@ -119,7 +122,7 @@ class GateMediator:
             self.__gate_inspector_panel.on_close()
             self.__schodringer_mediator.experiment_changed()
         except Exception as e:
-            wx.MessageBox(str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)
+            show_exc_dialog(e)
 
     def history_changed(self):
         # called on rename experiment
@@ -159,4 +162,3 @@ class GateMediator:
 
     def current_psi_representation(self, quantum_computer):
         return quantum_computer.current_psi_representation(with_hidden=False)
-        

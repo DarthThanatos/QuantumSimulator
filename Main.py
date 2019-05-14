@@ -1,4 +1,7 @@
 import sys
+
+from util.Utils import get_screen_w_h
+
 sys.setrecursionlimit(5000)
 import wx
 
@@ -8,8 +11,6 @@ from view.LoadingScreen import LoadingScreen
 from view.UpperMenu import UpperMenu
 from view.Editor import Editor
 import re
-
-from win32api import GetSystemMetrics
 import os
 import multiprocessing
 
@@ -27,7 +28,7 @@ class SimulatorApp(wx.App):
 
     def OnInit(self):
         wx.ToolTip.Enable(True)
-        frame = wx.MDIParentFrame(None, title="QuCharm", size=(GetSystemMetrics(0),GetSystemMetrics(1)))
+        frame = wx.MDIParentFrame(None, title="QuCharm", size=get_screen_w_h())
         frame.Maximize(True)
         quantum_computer = QuantumComputer(nqbits=3)
         self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUP)

@@ -1,5 +1,7 @@
 import collections
+import traceback
 
+import sys
 from qutip import ket
 
 from model.CircuitStepSimulator import CircuitStepSimulator
@@ -125,6 +127,7 @@ class Register:
 class Circuit:
 
     def __init__(self, quantum_computer, nqbits):
+        assert nqbits > 0, "Number of qubits must be bigger than 0"
         self.__quantum_computer = quantum_computer
         self.__register = Register(nqbits=nqbits)
         self.__gate_creator = GateCreator()
@@ -135,6 +138,7 @@ class Circuit:
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
 
     def init_register(self, nqubits, value):
+        assert nqubits > 0, "Number of qubits must be bigger than 0"
         self.__register = Register(nqbits=nqubits, value=value)
         self.__step_simulator = CircuitStepSimulator(self)
         self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
@@ -227,20 +231,21 @@ class Circuit:
         self.__register = self.__register_with_added_qbit()
         self.update_schodringer_experiments()
 
-    def remove_qbit(self, i):
-        if self.__grid.__contains__(i):
-            self.__grid.__delitem__(i)
-        self.__shift_grid(i)
-        self.__register = self.__register_with_removed_qbit(i)
-        self.__multi_gates = self.__multi_qbit_gates_after_qbit_removed(i)
-        self.update_schodringer_experiments()
-
     def update_schodringer_experiments(self):
         # check if can add schodringer experiment working only with one qubit
         if self.__register.nqubits() == 1:
             self.__quantum_computer.add_schodringer_experiment_if_not_exists()
         else:
             self.__quantum_computer.remove_schodringer_experiment_if_exists()
+
+    def remove_qbit(self, i):
+        assert self.__register.nqubits() > 1, "Number of qubits must be bigger than 0"
+        if self.__grid.__contains__(i):
+            self.__grid.__delitem__(i)
+        self.__shift_grid(i)
+        self.__register = self.__register_with_removed_qbit(i)
+        self.__multi_gates = self.__multi_qbit_gates_after_qbit_removed(i)
+        self.update_schodringer_experiments()
 
     def __multi_qbit_gates_after_qbit_removed(self, i):
         new_multi_gates_dict = {}
@@ -260,6 +265,11 @@ class Circuit:
                 new_multi_gates_dict.__delitem__(j)
         return new_multi_gates_dict
 
+    def __update_target_bits(self, shifted_gates):
+        for target, j_gate in shifted_gates.items():
+            for j, gate in j_gate.items():
+                gate.set_target(target - 1)
+
     def __shift_grid(self, i):
         indecies_bigger_than_i = list(filter(lambda x: x > i, self.__grid.keys()))
         indecies_lower_than_i = list(filter(lambda x: x < i, self.__grid.keys()))
@@ -267,6 +277,7 @@ class Circuit:
         values_of_lower_indicies = {x: self.__grid[x] for x in indecies_lower_than_i}
         self.__grid = {x: values_of_lower_indicies[x] for x in indecies_lower_than_i}
         self.__grid.update({x - 1: values_of_bigger_indicies[x] for x in indecies_bigger_than_i})
+        self.__update_target_bits(values_of_bigger_indicies)
 
     def __register_with_removed_qbit(self, i):
         v = self.__register.value()

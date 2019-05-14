@@ -231,8 +231,8 @@ class Editor(wx.MDIChildFrame):
         self.numFixedPages = 0
 
         # Explorer
-        self.circuitStd = self.addExplorerPage('CircuitStd', gateMediator=gateMediator, Page=CircuitStd_, quantum_computer=quantum_computer)
-        self.notepad = self.addExplorerPage('Editor', gateMediator=gateMediator, Page=Notepad, quantum_computer=quantum_computer)
+        self.circuitStd = self.addExplorerPage('Circuit Builder', gateMediator=gateMediator, Page=CircuitStd_, quantum_computer=quantum_computer)
+        self.notepad = self.addExplorerPage('Code Editor', gateMediator=gateMediator, Page=Notepad, quantum_computer=quantum_computer)
         # self.circuit = self.addExplorerPage('Circuit', gateMediator, Page=Circuit)
 
         self.winDimsMenu = wx.Menu()

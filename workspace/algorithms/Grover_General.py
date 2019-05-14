@@ -39,11 +39,10 @@ def inverse(quantum_instance, step, nqubits):
 def peek_register_value(quantum_instance, log, step, nqubits):
 	#quantum_instance.H(step, nqubits-1)
 	print("After", log)
-	# quantum_instance.print_current_psi_without_qubits([nqubits-1])
 	quantum_instance.set_hidden_qubits([nqubits-1])
 	quantum_instance.print_register_state(with_hidden=False)
 	#quantum_instance.H(step + 1, nqubits-1)
-	#move_n_steps(quantum_instance, 2)
+	move_n_steps(quantum_instance, 2)
 	return step #+2
 
 def move_n_steps(quantum_instance, n):

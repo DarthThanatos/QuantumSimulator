@@ -2,15 +2,16 @@ import functools
 import os
 import re
 import sys
+import traceback
 from functools import reduce
 from math import sqrt
-from win32api import GetSystemMetrics
+
+from screeninfo import get_monitors
 import matplotlib.patches
 import matplotlib.lines
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
-import numpy as np
 import wx
 
 from view.constants import *
@@ -88,7 +89,7 @@ def flatten_dicts(list_of_dicts):
     return dict(functools.reduce(lambda acc, d: update_dict(acc, d), list_of_dicts, {}))
 
 def get_screen_w_h():
-    return GetSystemMetrics(0), GetSystemMetrics(1)
+    return get_monitors()[0].width, get_monitors()[0].height
 
 def get_screen_middle_point():
     w,h = get_screen_w_h()
@@ -268,3 +269,18 @@ def toast(parent, txt, seconds):
     popup = ToastPopup(parent, txt, seconds)
     popup.Position(get_screen_middle_point(), (0, 0))
     popup.Show(True)
+
+
+def show_exc_dialog(e):
+    # traceback.print_tb(e.__traceback__)
+    for t in traceback.walk_tb(e.__traceback__):
+        f, _ = t
+        while f:
+            print(os.path.split(f.f_code.co_filename)[1], f.f_lineno)
+            f = f.f_back
+        print("\n\n")
+
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    frame = e.__traceback__.tb_frame
+    fname = os.path.split(frame.f_code.co_filename)[1]
+    wx.MessageBox(fname + " " + str(exc_tb.tb_lineno) + ": " + str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)

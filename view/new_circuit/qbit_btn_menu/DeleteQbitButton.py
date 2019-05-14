@@ -1,6 +1,6 @@
 import wx
 
-from util.Utils import newScaledImgBitmap
+from util.Utils import newScaledImgBitmap, show_exc_dialog
 from view.constants import *
 
 
@@ -21,5 +21,8 @@ class DeleteQbitButton(wx.Button):
         self.qbitMenu.onMouseLeaveDelete()
 
     def onClick(self, ev):
-        self.quantumComputer.remove_qbit(self.index)
-        self.__gate_mediator.register_changed()
+        try:
+            self.quantumComputer.remove_qbit(self.index)
+            self.__gate_mediator.register_changed()
+        except Exception as e:
+            show_exc_dialog(e)
