@@ -11,9 +11,7 @@ import matplotlib.patches
 import matplotlib.lines
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib.pyplot as plt
-
 import wx
-
 from view.constants import *
 
 
@@ -271,16 +269,51 @@ def toast(parent, txt, seconds):
     popup.Show(True)
 
 
-def show_exc_dialog(e):
-    # traceback.print_tb(e.__traceback__)
-    for t in traceback.walk_tb(e.__traceback__):
-        f, _ = t
-        while f:
-            print(os.path.split(f.f_code.co_filename)[1], f.f_lineno)
-            f = f.f_back
-        print("\n\n")
+def __corrected_syntax_error_msg(e, script_name):
+    matched = re.match(r'((\w+\s*)+)\((\w+)\.py, line (\d+)\)', str(e))
+    error_msg, file, lineno = matched[1], matched[3], int(matched[4])
+    lineno = lineno if file + ".py" != script_name else lineno - 1
+    return "{} ({}.py, line {})".format(error_msg, file, lineno)
 
-    exc_type, exc_obj, exc_tb = sys.exc_info()
-    frame = e.__traceback__.tb_frame
-    fname = os.path.split(frame.f_code.co_filename)[1]
-    wx.MessageBox(fname + " " + str(exc_tb.tb_lineno) + ": " + str(e) + "\nCircuit not built", 'Error', wx.OK | wx.ICON_ERROR)
+
+def show_exc_dialog(e, script_name=None):
+    traceback_lines = ""
+    exc_msg = str(e)
+    if script_name is not None:
+        tb = None
+        for t in traceback.walk_tb(e.__traceback__):
+            tb = t
+        if tb is not None:
+            f, _ = tb
+            reversed_f_list = []
+            while f:
+                f_name = os.path.split(f.f_code.co_filename)[1]
+                f_lineno = f.f_lineno - 1 if f_name == script_name else f.f_lineno
+                if len(reversed_f_list) > 0:
+                    prev_name, prev_lineno, prev_count = reversed_f_list[0]
+                    if f_name == prev_name and f_lineno == prev_lineno:
+                        reversed_f_list[0] = prev_name, prev_lineno, prev_count + 1
+                    else:
+                        reversed_f_list.insert(0, (f_name, f_lineno, 1))
+                else:
+                    reversed_f_list.insert(0, (f_name, f_lineno, 1))
+                f = f.f_back
+            quantum_instance_encountered = False
+            script_name_encounters = 0
+            f_list = []
+            for f_name, f_lineno, f_count in reversed_f_list:
+                if f_name == "QuantumInstance.py":
+                    quantum_instance_encountered = True
+                if script_name_encounters >= 1:
+                    if not quantum_instance_encountered:
+                        f_list.insert(0, (f_name, f_lineno, f_count))
+                if f_name == script_name:
+                    script_name_encounters += 1
+                    # we skip the first encounter of script_name in the stack (which points at )
+            for f_name, f_lineno, f_count in f_list:
+                traceback_lines += "{} at {}\n".format(f_name, f_lineno)
+                if f_count > 1:
+                    traceback_lines += "... {} more at {}:{}\n".format(f_count - 1, f_name, f_lineno)
+        exc_msg = exc_msg if traceback_lines != "" else __corrected_syntax_error_msg(e, script_name)
+    msg = "{} \nCircuit not built\n\nTraceback:\n{}".format(exc_msg, traceback_lines) if not traceback_lines == "" else exc_msg
+    wx.MessageBox(msg, 'Error', wx.OK | wx.ICON_ERROR)

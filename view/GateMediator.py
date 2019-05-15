@@ -71,7 +71,6 @@ class GateMediator:
         gate = quantum_computer.get_gate_at(*selected_gate_tile.ij)
         self.__gate_inspector_panel.inspect(gate)
 
-
     def gateSelected(self, gate_name, gate_copy=None):
         # called when a view representing a gate has been clicked or when a copy of existing gate has been made
         self.__frame.SetCursor(wx.Cursor(wx.Image('../Images/Palette/{}.png'.format(gate_name))))
@@ -96,7 +95,6 @@ class GateMediator:
         if removed_gate:
             self.__gate_inspector_panel.on_close()
 
-
     def run_in_console(self, quantum_computer):
         # called when "run in console" button was clicked
         code = self.__code_notebook.get_current_code_string()
@@ -107,7 +105,7 @@ class GateMediator:
             self.__gate_inspector_panel.on_close()
             self.__history_panel.reset_view()
         except Exception as e:
-            show_exc_dialog(e)
+            show_exc_dialog(e, file_name)
 
     def build_circuit_from_code(self, quantum_computer):
         code = self.__code_notebook.get_current_code_string()
@@ -122,7 +120,7 @@ class GateMediator:
             self.__gate_inspector_panel.on_close()
             self.__schodringer_mediator.experiment_changed()
         except Exception as e:
-            show_exc_dialog(e)
+            show_exc_dialog(e, file_name)
 
     def history_changed(self):
         # called on rename experiment
