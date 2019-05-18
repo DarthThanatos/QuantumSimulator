@@ -22,7 +22,6 @@ def bell_measurement(quantum_instance):
 def phone(quantum_instance):
 	quantum_instance.controlledX(step=11, ctrls=[2], target=3)
 	quantum_instance.controlledZ(step=12, ctrls=[1], target=3)
-
 def entanglement_teleportation(quantum_instance):
 	to_bell_basis(quantum_instance)
 	bell_measurement(quantum_instance)

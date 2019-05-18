@@ -70,6 +70,13 @@ class SimulatorApp(wx.App):
         self.gateMediator.window_closing()
         self.frame.Destroy()
 
+def getCWDRegexp(cwd):
+    path_parts = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
+    return path_parts[3]
+
+def getCWDBase(cwd):
+    return os.path.basename(cwd)
+
 def main():
     multiprocessing.freeze_support()
 
@@ -79,8 +86,8 @@ def main():
     # in case we want to execute the code from a different booting tool(whether from ide or console).
 
     cwd = os.getcwd()
-    path_parts = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
-    if path_parts[3] != "view":
+    dir_name = getCWDBase(cwd) # getCWDRegexp(cwd)
+    if dir_name != "view":
         os.chdir("view")
 
     app = SimulatorApp()

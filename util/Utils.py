@@ -102,14 +102,22 @@ def new_big_font_label(parent, label_txt):
     label.SetFont(font)
     return label
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-def get_workspace_path():
+
+def get_workspace_path_regex():
     cwd = os.getcwd()
     C_root, subdir, _, _ = re.findall(r'(C:\\)((\w+\\)+)(\w+)', cwd)[0]
-    workspacePath = C_root + subdir + "workspace"
-    return workspacePath
+    workspace_path = C_root + subdir + "workspace"
+    return workspace_path
+    
+
+def get_workspace_path():
+    dir_path = os.path.dirname(os.getcwd())
+    workspace_path = dir_path + "\\workspace"
+    return workspace_path
 
 def mouse_to_grid_coordinates(m_x, m_y):
     i = int(m_y / GATE_SIZE)
