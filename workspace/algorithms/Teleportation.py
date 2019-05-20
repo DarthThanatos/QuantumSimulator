@@ -2,7 +2,7 @@ import pydoc
 
 def init_psi(quantum_instance):
 	# input psi that is going to be teleported
-	quantum_instance.r_x(step=1, target=0, angle=0.524) 
+	quantum_instance.sqrt_x(step=1, target=0) 
 	quantum_instance.next_step()
 	print("initial psi register")
 	quantum_instance.print_register_state()

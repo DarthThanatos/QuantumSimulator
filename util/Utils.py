@@ -288,6 +288,9 @@ def show_exc_dialog(e, script_name=None):
     traceback_lines = ""
     exc_msg = str(e)
     if script_name is not None:
+        _, path_and_file = os.path.splitdrive(script_name)
+        _, script_name = os.path.split(path_and_file)
+    if script_name is not None:
         tb = None
         for t in traceback.walk_tb(e.__traceback__):
             tb = t

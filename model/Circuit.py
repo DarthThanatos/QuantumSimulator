@@ -90,9 +90,10 @@ class Register:
 
     def __prepared_state(self, psi, with_hidden=True):
         if not with_hidden:
-            for target in self.__qubits_hidden:
-                measure_gate = MeasurementGate(target)
-                psi = measure_gate.transform(psi, self.__nqubits)
+            for target, hidden in enumerate(self.__qubits_hidden):
+                if hidden:
+                    measure_gate = MeasurementGate(target)
+                    psi = measure_gate.transform(psi, self.__nqubits)
         existing_states_with_amplitudes = dict(
             map(
                 lambda x: (self.__value_without_hidden(x), psi.data[x, 0]) if not with_hidden else (x, psi.data[x, 0]), 
@@ -136,6 +137,7 @@ class Circuit:
         self.__multi_gates = {}
         # ^ dict of dicts { j -> { (ctrl1, ctrl2 ...) -> gate } }, where name is a simple target gate name,
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
+
 
     def init_register(self, nqubits, value):
         assert nqubits > 0, "Number of qubits must be bigger than 0"
@@ -456,6 +458,6 @@ class Circuit:
 if __name__ == '__main__':
     reg = Register(nqbits=5, value=5)
     psi = ket("00101")
-    reg.print_register_state()
+    reg.print_register_state(psi)
     reg.set_hidden_qubits([False, False, False, True, False])
     reg.print_register_state(psi, with_hidden=False)
