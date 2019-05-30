@@ -127,22 +127,23 @@ class Register:
 
 class Circuit:
 
-    def __init__(self, quantum_computer, nqbits):
+    def __init__(self, quantum_computer, nqbits, alpha=.75, initial_reg_psi=None):
         assert nqbits > 0, "Number of qubits must be bigger than 0"
         self.__quantum_computer = quantum_computer
         self.__register = Register(nqbits=nqbits)
         self.__gate_creator = GateCreator()
-        self.__step_simulator = CircuitStepSimulator(self)
+        self.__step_simulator = CircuitStepSimulator(self, alpha)
         self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
         self.__multi_gates = {}
         # ^ dict of dicts { j -> { (ctrl1, ctrl2 ...) -> gate } }, where name is a simple target gate name,
         # whereas j is a column in the grid, and ctrl_i are indices of rows, and target is a row of simple gate
-
+        self.__alpha = alpha
+        self.__initial_reg_psi = initial_reg_psi  # for performance test only, once initialized remains constant
 
     def init_register(self, nqubits, value):
         assert nqubits > 0, "Number of qubits must be bigger than 0"
         self.__register = Register(nqbits=nqubits, value=value)
-        self.__step_simulator = CircuitStepSimulator(self)
+        self.__step_simulator = CircuitStepSimulator(self, self.__alpha)
         self.__grid = {}  # dict of dicts of single gates, {i: {j : gate}}
         self.__multi_gates = {}
 
@@ -175,7 +176,9 @@ class Circuit:
         return psi if self.__step_simulator.is_simulation_on() else self.initial_register_ket()
 
     def initial_register_ket(self):
-        return self.__register.initial_qutip_ket()
+        init_psi = self.__register.initial_qutip_ket()
+        init_psi = init_psi if self.__initial_reg_psi is None else self.__initial_reg_psi
+        return init_psi
 
     def recreate_gate_at(self, i, j, gate):
         return self.add_gate(i, j, gate.get_name(), gate.parameters())
@@ -454,6 +457,7 @@ class Circuit:
 
     def get_max_simulation_step(self):
         return self.__step_simulator.get_max_simulation_step()
+
 
 if __name__ == '__main__':
     reg = Register(nqbits=5, value=5)

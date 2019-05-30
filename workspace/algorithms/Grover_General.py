@@ -1,6 +1,6 @@
 import numpy as np
 from workspace.composite_gates_scripts.hadamard_sandwitch import hadamard_sandwitch
-from math import log2
+from math import log2, pi, sqrt, ceil
 
 def init(quantum_instance, nqubits):
 	hadamard_sandwitch(quantum_instance, 0, 0, nqubits-1)
@@ -51,15 +51,15 @@ def move_n_steps(quantum_instance, n):
 
 if __name__ == '__main__':
 	nqubits = 5
-	iterations = 3
+	iterations = ceil(pi/4 * sqrt(1 << (nqubits-1)))
 	quantum_instance.init_register(nqubits=nqubits, value=1)
 	init(quantum_instance, nqubits)
 	step = 1
 	for i in range(iterations):
 		step = oracle_fN(quantum_instance, step, nqubits, 5)
 		move_n_steps(quantum_instance, 3)
-		step = peek_register_value(quantum_instance, "Oracle", step, nqubits)
+		#step = peek_register_value(quantum_instance, "Oracle", step, nqubits)
 		step = inverse(quantum_instance, step, nqubits)
 		move_n_steps(quantum_instance, 7)
-		step = peek_register_value(quantum_instance, "Inverse", step, nqubits)
+		#step = peek_register_value(quantum_instance, "Inverse", step, nqubits)
 	print(quantum_instance.get_measured() >> 1)

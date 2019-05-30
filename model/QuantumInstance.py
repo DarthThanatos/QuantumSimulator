@@ -20,6 +20,9 @@ class QuantumInstance:
     def init_register(self, nqubits, value):
         self.__circuit.init_register(nqubits, value)
 
+    def current_simulation_psi(self):
+        return self.__circuit.current_simulation_psi()
+
     def set_to(self, value):
         if not type(value) is int:
             msg = "argument of set_to must be an integer"

@@ -10,7 +10,7 @@ from model.gates.Identity import Identity
 
 class CircuitStepSimulator:
 
-    def __init__(self, circuit):
+    def __init__(self, circuit, alpha):
         # single_gates: dict of dicts {j -> {i -> gate}}
         # multi_gates: dict of dicts {j -> {ctrl_i_tuple -> gate}}
         # please note that gates in single_gates and multi_gates should be disjoint
@@ -20,6 +20,7 @@ class CircuitStepSimulator:
         self.__step = -1
         self.__circuit = circuit
         self.__current_psi = None
+        self.__alpha = alpha
 
     def step_already_simulated(self, step):
         return step <= self.__step
@@ -74,11 +75,11 @@ class CircuitStepSimulator:
 
     def __operators_number_enough(self):
         nqubits = self.__circuit.circuit_qubits_number()
-        return 1. * len(self.__single_gates[self.__step]) / nqubits > .75
+        return 1. * len(self.__single_gates[self.__step]) / nqubits > self.__alpha
 
     def __base_states_number_enough(self):
         nqubits = self.__circuit.circuit_qubits_number()
-        return 1. * len(self.__current_psi.data.tocoo().row) / (2 ** nqubits) > .75
+        return 1. * len(self.__current_psi.data.tocoo().row) / (2 ** nqubits) > self.__alpha
 
     def __perform_single_gates_operations(self):
         if not self.__single_gates.__contains__(self.__step):
