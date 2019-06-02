@@ -254,7 +254,7 @@ def plot_df(collection, x_title, hue_title, col_title, dir_name, file_name, titl
         plt.yscale(scale)
         sns.barplot(x=x_title, hue=hue_title, y=col_title, data=df)
     plt.title(title)
-    plt.savefig("results/imgs/{}/{}.png".format(dir_name, file_name))  
+    plt.savefig("results/imgs/{}/{}.png".format(dir_name, file_name.replace(".", "_")), format="png")  
 
 
 def plot_time_memory(d, x_name, hue_name, dir_name, get_data_description, get_file_prefix, get_title, palette, scales, methods_filter=None, fig_size=None):
@@ -266,9 +266,9 @@ def plot_time_memory(d, x_name, hue_name, dir_name, get_data_description, get_fi
             method_dict_filtered_keys = method_dict.keys() if type(method_dict) is dict else method_dict
         data, lines = get_data_description(method_dict, method_dict_filtered_keys)
         time_scale, mem_scale = scales
-        file_name =  "{}_{}_{}.png".format(get_file_prefix(), "time", plot_key)
+        file_name =  "{}_{}_{}".format(get_file_prefix(), "time", plot_key)
         plot_df(lines, x_name, hue_name, "time[s]", dir_name, file_name, get_title(plot_key), True, time_scale, palette, fig_size=None)
-        file_name =  "{}_{}_{}.png".format(get_file_prefix(), "mem", plot_key)
+        file_name =  "{}_{}_{}".format(get_file_prefix(), "mem", plot_key)
         plot_df(data, x_name, hue_name, "memory[MB]", dir_name, file_name, get_title(plot_key), False, mem_scale, fig_size=fig_size)
 
 
@@ -390,9 +390,9 @@ def plot_xsolve(d, method_name):
         return method_name
 
     def get_title(nqubits):
-        return "scalability of {} continuous evolution method for {} qubits and 40 time resolution".format(method_name, nqubits)
+        return "scalability of {} continuous evolution method for {} qubits and 40 step time resolution".format(method_name, nqubits)
 
-    scales = ("log", "log")
+    scales = ("linear", "linear")
     dir_name = "decoherence"
     plot_time_memory(d, "c_ops number", "name", dir_name, get_data_description, get_file_prefix, get_title, palette, scales)
 
